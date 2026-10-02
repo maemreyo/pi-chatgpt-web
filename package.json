@@ -1,0 +1,40 @@
+{
+  "name": "pi-chatgpt-web",
+  "version": "0.1.0",
+  "description": "Use codex-chatgpt-web ChatGPT Web models as a native provider in Pi.",
+  "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "pi-package",
+    "pi-coding-agent",
+    "chatgpt",
+    "chatgpt-web",
+    "openai-responses",
+    "gpt-5.6"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/maemreyo/pi-chatgpt-web.git"
+  },
+  "bugs": {
+    "url": "https://github.com/maemreyo/pi-chatgpt-web/issues"
+  },
+  "homepage": "https://github.com/maemreyo/pi-chatgpt-web#readme",
+  "pi": {
+    "extensions": [
+      "./extensions/chatgpt-web.js"
+    ]
+  },
+  "scripts": {
+    "test": "node --test",
+    "check": "npm test && npm pack --dry-run"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "extensions",
+    "README.md",
+    "LICENSE"
+  ]
+}
