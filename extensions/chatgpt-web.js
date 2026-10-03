@@ -5,11 +5,49 @@ function uid(prefix) {
   return `${prefix}_${crypto.randomUUID().replaceAll("-", "")}`;
 }
 
+function nativeId() {
+  return crypto.randomUUID();
+}
+
+export function createTurnState() {
+  return {
+    turnId: nativeId(),
+    userItemId: uid("msg"),
+    environmentItemId: uid("msg"),
+  };
+}
+
+function xmlEscape(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function environmentMessage({ turnId, cwd, itemId }) {
+  const path = xmlEscape(cwd);
+  return {
+    type: "message",
+    role: "user",
+    id: itemId,
+    content: [{
+      type: "input_text",
+      text: `<environment_context>\n<cwd>${path}</cwd>\n<workspace_roots><root>${path}</root></workspace_roots>\n<sandbox_mode>danger-full-access</sandbox_mode>\n</environment_context>`,
+    }],
+    internal_chat_message_metadata_passthrough: {
+      turn_id: turnId,
+      content_item_kinds: ["environments.environment_context"],
+    },
+  };
+}
+
 export function bridgeModelId(modelId) {
   return modelId.startsWith("chatgpt-web/") ? modelId : `chatgpt-web/${modelId}`;
 }
 
-export function decoratePayload(payload, { turnId, threadId, cwd, bridgeModel }) {
+export function decoratePayload(payload, { turnId, threadId, cwd, bridgeModel, userItemId, environmentItemId }) {
   if (!payload || typeof payload !== "object") return payload;
 
   const input = Array.isArray(payload.input)
@@ -26,12 +64,13 @@ export function decoratePayload(payload, { turnId, threadId, cwd, bridgeModel })
       input[lastUser] = {
         ...user,
         type: "message",
-        id: typeof user.id === "string" && user.id ? user.id : uid("msg"),
+        id: typeof user.id === "string" && user.id ? user.id : userItemId,
         internal_chat_message_metadata_passthrough: {
           ...(user.internal_chat_message_metadata_passthrough || {}),
           turn_id: turnId,
         },
       };
+      input.splice(lastUser, 0, environmentMessage({ turnId, cwd, itemId: environmentItemId }));
     }
   }
 
@@ -57,8 +96,8 @@ export function decoratePayload(payload, { turnId, threadId, cwd, bridgeModel })
 export default function chatGptWebExtension(pi) {
   const baseUrl = process.env.PI_CHATGPT_WEB_BASE_URL || DEFAULT_BASE_URL;
   const localBearer = process.env.PI_CHATGPT_WEB_API_KEY || "pi-chatgpt-web-local";
-  let fallbackThreadId = uid("thread");
-  let activeTurnId = null;
+  let fallbackThreadId = nativeId();
+  let activeTurn = null;
 
   pi.registerProvider(PROVIDER_ID, {
     name: "ChatGPT Web",
@@ -91,16 +130,16 @@ export default function chatGptWebExtension(pi) {
   });
 
   pi.on("session_start", () => {
-    fallbackThreadId = uid("thread");
-    activeTurnId = null;
+    fallbackThreadId = nativeId();
+    activeTurn = null;
   });
 
   pi.on("before_agent_start", () => {
-    activeTurnId = uid("turn");
+    activeTurn = createTurnState();
   });
 
   pi.on("agent_end", () => {
-    activeTurnId = null;
+    activeTurn = null;
   });
 
   pi.on("before_provider_request", (event, ctx) => {
@@ -108,17 +147,18 @@ export default function chatGptWebExtension(pi) {
     const payload = event.payload;
     if (!payload || typeof payload !== "object") return;
 
-    const turnId = activeTurnId || uid("turn");
-    const threadId = typeof payload.prompt_cache_key === "string" && payload.prompt_cache_key
-      ? payload.prompt_cache_key
-      : fallbackThreadId;
+    if (!activeTurn) activeTurn = createTurnState();
+    const turn = activeTurn;
+    const threadId = fallbackThreadId;
     const modelId = typeof ctx.model?.id === "string" ? ctx.model.id : payload.model;
 
     return decoratePayload(payload, {
-      turnId,
+      turnId: turn.turnId,
       threadId,
       cwd: ctx.cwd || process.cwd(),
       bridgeModel: bridgeModelId(modelId),
+      userItemId: turn.userItemId,
+      environmentItemId: turn.environmentItemId,
     });
   });
 }

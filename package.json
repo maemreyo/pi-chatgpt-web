@@ -1,7 +1,7 @@
 {
   "name": "pi-chatgpt-web",
-  "version": "0.1.0",
-  "description": "Use codex-chatgpt-web ChatGPT Web models as a native provider in Pi.",
+  "version": "0.2.0",
+  "description": "Use ChatGPT Web models from codex-chatgpt-web as a native provider in earendil-works/pi.",
   "type": "module",
   "license": "MIT",
   "keywords": [
@@ -10,7 +10,9 @@
     "chatgpt",
     "chatgpt-web",
     "openai-responses",
-    "gpt-5.6"
+    "gpt-5.6",
+    "earendil-works",
+    "pi-agent"
   ],
   "repository": {
     "type": "git",
@@ -30,11 +32,15 @@
     "check": "npm test && npm pack --dry-run"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22.19.0"
   },
   "files": [
     "extensions",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
-  ]
+  ],
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": ">=1.0.0"
+  }
 }
