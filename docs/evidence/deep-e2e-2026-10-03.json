@@ -1,6 +1,6 @@
 {
   "date": "2026-10-03",
-  "phase": "source verified; review successor and installed release acceptance pending",
+  "phase": "complete",
   "versions": {
     "provider_candidate": "0.2.4",
     "review_candidate": "0.1.1",
@@ -11,7 +11,11 @@
   "provider_unit": {
     "passed": 36,
     "failed": 0,
-    "skipped": 0
+    "skipped": 0,
+    "node_versions": [
+      "22.21.0",
+      "24.19.0"
+    ]
   },
   "review_full_real_suite": {
     "numTotalTestSuites": 64,
@@ -23,7 +27,7 @@
     "numFailedTests": 0,
     "numPendingTests": 0,
     "numTodoTests": 0,
-    "startTime": 1791026044813,
+    "startTime": 1791026814183,
     "success": true
   },
   "stress_cases": [
@@ -536,6 +540,14 @@
       "active_http_turns": 0,
       "active_browser_turns": 0,
       "accepting_turns": true
+    },
+    "closeout": {
+      "status": "ok",
+      "version": "6.1.4",
+      "pid": 1896,
+      "active_http_turns": 0,
+      "active_browser_turns": 0,
+      "accepting_turns": true
     }
   },
   "audit_observations": {
@@ -629,6 +641,578 @@
       "error": "BLUE BLUE",
       "finishedAt": 1791024530.86356
     },
-    "status_assertion": "Initial installed-status assertion expected uppercase OCR; actual READY JSON uses lowercase ocr. Fixed schema assertion and rerun passed."
-  }
+    "status_assertion": "Initial installed-status assertion expected uppercase OCR; actual READY JSON uses lowercase ocr. Fixed schema assertion and rerun passed.",
+    "successor_null_input_finding": {
+      "case": "review-integration",
+      "pass": false,
+      "cases": [
+        {
+          "case": "bug",
+          "pass": true,
+          "candidate": "e38eae4e768a38e32bf1c5cb2742d0f37ee860ff",
+          "commandsVerified": true,
+          "tools": [
+            "code_review_capabilities",
+            "code_review_begin",
+            "code_review_rules",
+            "code_review_diff",
+            "code_review_authority",
+            "code_review_context",
+            "code_review_context",
+            "code_review_context",
+            "code_review_record",
+            "code_review_record",
+            "code_review_record",
+            "code_review_record",
+            "code_review_record",
+            "code_review_record",
+            "code_review_record",
+            "code_review_record",
+            "code_review_record",
+            "code_review_record",
+            "code_review_record",
+            "code_review_record",
+            "code_review_record",
+            "code_review_record",
+            "code_review_finalize"
+          ],
+          "findings": 1,
+          "policyCoverage": "COMPLETE",
+          "accountingComplete": true,
+          "error": null,
+          "timeout": false
+        },
+        {
+          "case": "repaired",
+          "pass": false,
+          "candidate": "503d5fd9cb1bb0e5a4ae661d4f76ad27a19b5772",
+          "commandsVerified": true,
+          "tools": [
+            "code_review_capabilities",
+            "code_review_begin",
+            "code_review_rules",
+            "code_review_authority",
+            "code_review_diff",
+            "code_review_context",
+            "code_review_context",
+            "code_review_diff",
+            "code_review_context",
+            "code_review_context",
+            "code_review_context",
+            "code_review_context",
+            "code_review_authority",
+            "code_review_record",
+            "code_review_record",
+            "code_review_record",
+            "code_review_record",
+            "code_review_record",
+            "code_review_record",
+            "code_review_record",
+            "code_review_finalize",
+            "code_review_authority"
+          ],
+          "findings": 1,
+          "policyCoverage": "COMPLETE",
+          "accountingComplete": true,
+          "error": null,
+          "timeout": false
+        }
+      ]
+    },
+    "upstream_reported_review_safety_block": {
+      "case": "review-integration",
+      "pass": false,
+      "cases": [
+        {
+          "case": "bug",
+          "pass": false,
+          "candidate": "1cdeba1daf8d8a819c538bd6a34108e6934adfa5",
+          "commandsVerified": true,
+          "tools": [],
+          "error": null,
+          "timeout": false,
+          "protocolErrors": [],
+          "baseContextEvidence": []
+        }
+      ]
+    },
+    "missing_project_authority_installed": {
+      "case": "review-integration",
+      "pass": false,
+      "cases": [
+        {
+          "case": "bug",
+          "pass": true,
+          "candidate": "2d1c70889ad083c3bad64c3b49d302cd1df0ef30",
+          "commandsVerified": true,
+          "tools": [
+            "code_review_capabilities",
+            "code_review_begin",
+            "code_review_rules",
+            "code_review_authority",
+            "code_review_context",
+            "code_review_context",
+            "code_review_diff",
+            "code_review_context",
+            "code_review_record",
+            "code_review_progress",
+            "code_review_record",
+            "code_review_record",
+            "code_review_record",
+            "code_review_record",
+            "code_review_finalize",
+            "code_review_authority"
+          ],
+          "findings": 1,
+          "policyCoverage": "COMPLETE",
+          "accountingComplete": true,
+          "error": null,
+          "timeout": false,
+          "protocolErrors": [],
+          "baseContextEvidence": [
+            {
+              "path": "AGENTS.md",
+              "representation": "path_absence",
+              "sha256": "f16904fba13086198db3114b8f007fe3c119ad90a2537ff7550eb0566138ca9f",
+              "receiptId": "mr_89e71f04de71a83d29252d1ff54c00e8",
+              "complete": true
+            },
+            {
+              "path": "CLAUDE.md",
+              "representation": "path_absence",
+              "sha256": "0144f747742b0df80f9c9e940d83846d0267afe3e2a8ab34e04f46086e795dd4",
+              "receiptId": "mr_e64784ad2db98cb2adf67cdfc1a69d30",
+              "complete": true
+            }
+          ]
+        },
+        {
+          "case": "repaired",
+          "pass": false,
+          "candidate": "678f98fe9f96f5d221e062ffd0bad8a9c606eaea",
+          "commandsVerified": true,
+          "tools": [
+            "code_review_capabilities",
+            "code_review_begin",
+            "code_review_manifest_page",
+            "code_review_rules",
+            "code_review_authority",
+            "code_review_diff",
+            "code_review_context",
+            "code_review_context",
+            "code_review_progress",
+            "code_review_context",
+            "code_review_context",
+            "code_review_record",
+            "code_review_record",
+            "code_review_record",
+            "code_review_record",
+            "code_review_progress",
+            "code_review_finalize"
+          ],
+          "error": null,
+          "timeout": false,
+          "protocolErrors": [],
+          "baseContextEvidence": [
+            {
+              "path": "AGENTS.md",
+              "representation": "path_absence",
+              "sha256": "d7ef01ff7e42e28d31759623d38310063f1ab31c9280ba0435e19ea5c5eac765",
+              "receiptId": "mr_a42556aaf37da5289ffc2a48abf91084",
+              "complete": true
+            },
+            {
+              "path": "CLAUDE.md",
+              "representation": "path_absence",
+              "sha256": "6aa09d6788bb66a36ed30ad25ea2719e00270af4493dca8b68445a96113865d7",
+              "receiptId": "mr_02a7ba2759d9e77bbca64ab245f6aae2",
+              "complete": true
+            },
+            {
+              "path": "access.js",
+              "representation": "text",
+              "sha256": "ed0b7e4ab1c1d6e3c400e2872b57b3c74b2a97e2c08d5fc4521b17a72b5ea762",
+              "receiptId": "mr_62bd0602f6738b69059da31b5f063a08",
+              "complete": true
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "installed_provider": {
+    "abort": {
+      "pass": true,
+      "cases": [
+        {
+          "case": "abort-tool",
+          "pass": true,
+          "startedAt": 1791026600.187249,
+          "abortPreventedLateWrite": true,
+          "sameSessionRecovery": true,
+          "toolCalls": 4,
+          "tools": [
+            "bash",
+            "shell_command"
+          ],
+          "assistantResponses": 4,
+          "retryEvents": 0,
+          "routes": [
+            "ordinary-turn route=turn",
+            "ordinary-turn route=turn",
+            "tool-continuation route=turn"
+          ],
+          "finishedAt": 1791026633.2568362
+        }
+      ],
+      "baselineHealth": {
+        "status": "ok",
+        "version": "6.1.4",
+        "pid": 1896,
+        "active_http_turns": 0,
+        "active_browser_turns": 0,
+        "accepting_turns": true
+      },
+      "finalHealth": {
+        "status": "ok",
+        "version": "6.1.4",
+        "pid": 1896,
+        "active_http_turns": 0,
+        "active_browser_turns": 0,
+        "accepting_turns": true
+      },
+      "extension": "<home>/.pi/agent/git/github.com/maemreyo/pi-chatgpt-web/extensions/chatgpt-web.js",
+      "at": 1791026633.259341
+    },
+    "branch": {
+      "case": "branch-summary",
+      "pass": true,
+      "model": "gpt-5.6-sol",
+      "thinking": "medium",
+      "summaryChars": 1230,
+      "recall": true,
+      "appendixAbsent": true,
+      "preparations": [
+        {
+          "wantsSummary": true,
+          "entries": 2
+        }
+      ],
+      "toolCalls": 0
+    },
+    "faults": {
+      "pass": true,
+      "cases": [
+        {
+          "case": "multipart",
+          "pass": true,
+          "requests": 1,
+          "retryEvents": 0,
+          "error": "ChatGPT Web needs manual recovery (multipart_stage_3_acknowledgement). The request may already have been submitted. Inspect the ChatGPT tab before continuing; automatic replay is disabled. Details: /chatgpt-web-status.",
+          "exitCode": 0
+        },
+        {
+          "case": "submitted",
+          "pass": true,
+          "requests": 1,
+          "retryEvents": 0,
+          "error": "ChatGPT Web needs manual recovery (chatgpt_submitted_turn_failed). The request may already have been submitted. Inspect the ChatGPT tab before continuing; automatic replay is disabled. Details: /chatgpt-web-status.",
+          "exitCode": 0
+        },
+        {
+          "case": "tool-wait",
+          "pass": true,
+          "requests": 1,
+          "retryEvents": 0,
+          "error": "ChatGPT Web needs manual recovery (tool_result_not_observed). The request may already have been submitted. Inspect the ChatGPT tab before continuing; automatic replay is disabled. Details: /chatgpt-web-status.",
+          "exitCode": 0
+        },
+        {
+          "case": "inconsistent",
+          "pass": true,
+          "requests": 1,
+          "retryEvents": 0,
+          "error": "ChatGPT Web needs manual recovery (browser_stream_inconsistent). The request may already have been submitted. Inspect the ChatGPT tab before continuing; automatic replay is disabled. Details: /chatgpt-web-status.",
+          "exitCode": 0
+        },
+        {
+          "case": "protocol",
+          "pass": true,
+          "requests": 1,
+          "retryEvents": 0,
+          "error": "ChatGPT Web needs manual recovery (multipart_protocol_violation). The request may already have been submitted. Inspect the ChatGPT tab before continuing; automatic replay is disabled. Details: /chatgpt-web-status.",
+          "exitCode": 0
+        },
+        {
+          "case": "stopped",
+          "pass": true,
+          "requests": 1,
+          "retryEvents": 0,
+          "error": "ChatGPT Web needs manual recovery (chatgpt_stopped_thinking). The request may already have been submitted. Inspect the ChatGPT tab before continuing; automatic replay is disabled. Details: /chatgpt-web-status.",
+          "exitCode": 0
+        },
+        {
+          "case": "generic-502",
+          "pass": true,
+          "requests": 1,
+          "retryEvents": 0,
+          "error": "ChatGPT Web needs manual recovery (browser_request_outcome_unknown). The request may already have been submitted. Inspect the ChatGPT tab before continuing; automatic replay is disabled. Details: /chatgpt-web-status.",
+          "exitCode": 0
+        },
+        {
+          "case": "generic-timeout",
+          "pass": true,
+          "requests": 1,
+          "retryEvents": 0,
+          "error": "ChatGPT Web needs manual recovery (browser_request_outcome_unknown). The request may already have been submitted. Inspect the ChatGPT tab before continuing; automatic replay is disabled. Details: /chatgpt-web-status.",
+          "exitCode": 0
+        },
+        {
+          "case": "closed-before-headers",
+          "pass": true,
+          "requests": 1,
+          "retryEvents": 0,
+          "error": "ChatGPT Web needs manual recovery (browser_request_outcome_unknown). The request may already have been submitted. Inspect the ChatGPT tab before continuing; automatic replay is disabled. Details: /chatgpt-web-status.",
+          "exitCode": 0
+        },
+        {
+          "case": "truncated-sse",
+          "pass": true,
+          "requests": 1,
+          "retryEvents": 0,
+          "error": "ChatGPT Web needs manual recovery (incomplete_browser_response). The request may already have been submitted. Inspect the ChatGPT tab before continuing; automatic replay is disabled. Details: /chatgpt-web-status.",
+          "exitCode": 0
+        },
+        {
+          "case": "partial-disconnect",
+          "pass": true,
+          "requests": 1,
+          "retryEvents": 0,
+          "error": "ChatGPT Web needs manual recovery (incomplete_browser_response). The request may already have been submitted. Inspect the ChatGPT tab before continuing; automatic replay is disabled. Details: /chatgpt-web-status.",
+          "exitCode": 0
+        },
+        {
+          "case": "auth-expired",
+          "pass": true,
+          "requests": 1,
+          "retryEvents": 0,
+          "error": "chatgpt-web API error (401): {\"type\":\"request_error\",\"code\":\"chatgpt_session_expired\",\"message\":\"Sign in required\",\"retryable\":false}",
+          "exitCode": 0
+        },
+        {
+          "case": "invalid-input",
+          "pass": true,
+          "requests": 1,
+          "retryEvents": 0,
+          "error": "chatgpt-web API error (400): {\"type\":\"request_error\",\"code\":\"invalid_request\",\"message\":\"Malformed request\",\"retryable\":false}",
+          "exitCode": 0
+        },
+        {
+          "case": "rate-limit",
+          "pass": true,
+          "requests": 1,
+          "retryEvents": 0,
+          "error": "ChatGPT Web needs manual recovery (browser_request_outcome_unknown). The request may already have been submitted. Inspect the ChatGPT tab before continuing; automatic replay is disabled. Details: /chatgpt-web-status.",
+          "exitCode": 0
+        }
+      ],
+      "at": 1791026769.8409579,
+      "extension": "<home>/.pi/agent/git/github.com/maemreyo/pi-chatgpt-web/extensions/chatgpt-web.js"
+    },
+    "authority": {
+      "pass": true,
+      "cases": [
+        {
+          "case": "no-bash",
+          "pass": true,
+          "requests": 2,
+          "toolErrorObserved": true,
+          "noSideEffects": true,
+          "authorityVerified": true,
+          "exitCode": 0
+        },
+        {
+          "case": "nested-hook-block",
+          "pass": true,
+          "requests": 2,
+          "toolErrorObserved": true,
+          "noSideEffects": true,
+          "authorityVerified": true,
+          "exitCode": 0
+        }
+      ]
+    }
+  },
+  "release": {
+    "provider_tag": "v0.2.4",
+    "provider_code_commit": "ed350d6462746608e36eb272e4e58df4384c720b",
+    "review_tag": "v0.1.1",
+    "review_code_commit": "65c7d50f8bda2d9133eaa8189507934ea9f17473",
+    "installed_extensions_match_source": true,
+    "installed_review_dist_files_match_source": 84
+  },
+  "acceptance_pass": true,
+  "installed_review": {
+    "case": "review-integration",
+    "fixtureAuthority": "baseline AGENTS.md + frozen project authorization contract",
+    "pass": true,
+    "cases": [
+      {
+        "case": "bug",
+        "pass": true,
+        "candidate": "15b9a725d969747302b41d34f0229e8aa6105157",
+        "commandsVerified": true,
+        "tools": [
+          "code_review_capabilities",
+          "code_review_begin",
+          "code_review_rules",
+          "code_review_authority",
+          "code_review_diff",
+          "code_review_context",
+          "code_review_context",
+          "code_review_context",
+          "code_review_context",
+          "code_review_progress",
+          "code_review_record",
+          "code_review_progress",
+          "code_review_record",
+          "code_review_record",
+          "code_review_record",
+          "code_review_record",
+          "code_review_record",
+          "code_review_record",
+          "code_review_progress",
+          "code_review_finalize",
+          "code_review_authority"
+        ],
+        "findings": 1,
+        "policyCoverage": "COMPLETE",
+        "accountingComplete": true,
+        "error": null,
+        "timeout": false,
+        "protocolErrors": [
+          {
+            "tool": "code_review_record",
+            "code": "FINDING_REFERENCE_INVALID"
+          }
+        ],
+        "baseContextEvidence": [
+          {
+            "path": "AGENTS.md",
+            "representation": "text",
+            "sha256": "dd31cb9e17e9abee01e6e3e4f815ee1739a995741124154b213c65bab2559cdc",
+            "receiptId": "mr_cecf373386f213dab95ebc87b14626c4",
+            "complete": true
+          },
+          {
+            "path": "CLAUDE.md",
+            "representation": "path_absence",
+            "sha256": "e92559df961f643ac3c5e6d944f9ae7a6874015ffce98032e00886b7c4576ec5",
+            "receiptId": "mr_956bee5be24a606e71f0a1027a7c63fe",
+            "complete": true
+          },
+          {
+            "path": ".zamery/review-contract.json",
+            "representation": "text",
+            "sha256": "552f0f29dee2538141a2becf59d81054d4aab0a6ea595ca91c27c2acb747e1c9",
+            "receiptId": "mr_52267e93861c89d80a7c8633a0f97523",
+            "complete": true
+          }
+        ]
+      },
+      {
+        "case": "repaired",
+        "pass": true,
+        "candidate": "53874348012df6fde1c54a6a6afe2ae4c552bd03",
+        "commandsVerified": true,
+        "tools": [
+          "code_review_capabilities",
+          "code_review_begin",
+          "code_review_rules",
+          "code_review_authority",
+          "code_review_diff",
+          "code_review_context",
+          "code_review_context",
+          "code_review_context",
+          "code_review_record",
+          "code_review_record",
+          "code_review_record",
+          "code_review_record",
+          "code_review_record",
+          "code_review_progress",
+          "code_review_finalize",
+          "code_review_authority"
+        ],
+        "findings": 0,
+        "policyCoverage": "COMPLETE",
+        "accountingComplete": true,
+        "error": null,
+        "timeout": false,
+        "protocolErrors": [],
+        "baseContextEvidence": [
+          {
+            "path": "AGENTS.md",
+            "representation": "text",
+            "sha256": "dd31cb9e17e9abee01e6e3e4f815ee1739a995741124154b213c65bab2559cdc",
+            "receiptId": "mr_b4495b195d10a42df7ea1cfe84afb7ce",
+            "complete": true
+          },
+          {
+            "path": "CLAUDE.md",
+            "representation": "path_absence",
+            "sha256": "9b698109e13d158c69d83f6e4325b77ef6c68439d53ad6ef5f8ecd5a6e04ac38",
+            "receiptId": "mr_454c01a8c36acd10dec0c429607e3068",
+            "complete": true
+          },
+          {
+            "path": ".zamery/review-contract.json",
+            "representation": "text",
+            "sha256": "552f0f29dee2538141a2becf59d81054d4aab0a6ea595ca91c27c2acb747e1c9",
+            "receiptId": "mr_f0af0b7ebe4873bb454645316fd52730",
+            "complete": true
+          }
+        ]
+      }
+    ]
+  },
+  "installed_all_packages": {
+    "pass": true,
+    "cases": [
+      {
+        "case": "installed-status",
+        "pass": true,
+        "startedAt": 1791027045.623476,
+        "commandsLoaded": true,
+        "bridgeReady": true,
+        "reviewReady": true,
+        "toolCalls": 0,
+        "tools": [],
+        "assistantResponses": 1,
+        "retryEvents": 0,
+        "routes": [
+          "ordinary-turn route=turn"
+        ],
+        "finishedAt": 1791027062.453992
+      }
+    ],
+    "baselineHealth": {
+      "status": "ok",
+      "version": "6.1.4",
+      "pid": 1896,
+      "active_http_turns": 0,
+      "active_browser_turns": 0,
+      "accepting_turns": true
+    },
+    "finalHealth": {
+      "status": "ok",
+      "version": "6.1.4",
+      "pid": 1896,
+      "active_http_turns": 1,
+      "active_browser_turns": 1,
+      "accepting_turns": true
+    },
+    "extension": "<home>/.pi/agent/git/github.com/maemreyo/pi-chatgpt-web/extensions/chatgpt-web.js",
+    "at": 1791027062.4571679
+  },
+  "closed_at": "2026-10-03T12:34:50.746240+00:00"
 }

@@ -12,9 +12,14 @@ if(process.env.PI_STRESS_REVIEW_EXTENSION){
  script=script.replace('spawn("pi", [','spawn("pi", ['+extensions.map(v=>JSON.stringify(v)).join(",")+",");
 }
 assert(script.includes('const root = resolve(import.meta.dirname, "..");'),"review driver contract changed");
+const fixtureAuthority = "baseline AGENTS.md + frozen project authorization contract";
+const baseline = 'git("add", "access.js"); git("commit", "-m", "baseline access check");';
+assert(script.includes(baseline),"review fixture baseline contract changed");
+script=script.replace(baseline,"mkdirSync(resolve(fixture, \".zamery\"), {recursive:true});\n  writeFileSync(resolve(fixture, \"AGENTS.md\"), \"# Fixture project instructions\\n\\nThis file and .zamery/review-contract.json define this repository's complete project instruction authority. There are no other instruction-file references or product contracts.\\n\\nisAllowed(user) accepts a nullable user. It allows exactly the reserved public role identifier admin, rejects all other roles and missing users, and must never mutate the caller's object. The frozen project Review Contract carries this same enforceable law.\\n\");\n  writeFileSync(resolve(fixture, \".zamery/review-contract.json\"), \"{\\n  \\\"schema_version\\\": \\\"zamery.review-contract.v1\\\",\\n  \\\"rules\\\": [\\n    {\\n      \\\"id\\\": \\\"project.authorization-contract\\\",\\n      \\\"enforcement\\\": \\\"required\\\",\\n      \\\"scope\\\": \\\"change\\\",\\n      \\\"instruction\\\": \\\"isAllowed(user) must return true exactly when the nullable user's role equals the reserved public role identifier admin. Reject null/undefined and other roles. Do not mutate the caller's user object. The admin literal is the fixed authorization contract, not an unresolved business value.\\\"\\n    }\\n  ]\\n}\\n\");\n  git(\"add\", \"-A\"); git(\"commit\", \"-m\", \"baseline access check\");");
+
 const driver=resolve(root,"driver.mjs");
 writeFileSync(driver,script.replace('const root = resolve(import.meta.dirname, "..");',"const root = "+JSON.stringify(root)+";"));
-const report={case:"review-integration",pass:false,cases:[]};
+const report={case:"review-integration",fixtureAuthority,pass:false,cases:[]};
 for (const [name,args] of [["bug",[]],["repaired",["--successor"]]]) {
  const result=spawnSync(process.execPath,[driver,...args],{encoding:"utf8",timeout:8*60_000});
  writeFileSync(resolve(root,name+".log"),result.stdout+"\n"+result.stderr);
