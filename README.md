@@ -16,7 +16,7 @@ Current target:
 - GPT-5.6 Sol High tested
 - Full multi-round tool loop tested: ChatGPT Web → Responses tool call → Pi local tool execution → tool result → ChatGPT Web continuation
 
-> **Version note:** `v0.1.0` targeted the older `@mariozechner/pi-coding-agent` package and is deprecated. Use `v0.2.0` or newer for `earendil-works/pi`.
+> **Version note:** `v0.1.0` targeted the older `@mariozechner/pi-coding-agent` package and is deprecated. Use `v0.2.1` or newer for `earendil-works/pi`.
 
 ## How it works
 
@@ -85,7 +85,7 @@ For Pi to use local tools through a ChatGPT Web turn, configure the **Full harne
 From the tagged GitHub release:
 
 ```bash
-pi install git:github.com/maemreyo/pi-chatgpt-web@v0.2.0
+pi install git:github.com/maemreyo/pi-chatgpt-web@v0.2.1
 ```
 
 Or track the repository default branch:
@@ -211,7 +211,7 @@ pi --list-models chatgpt-web
 
 ### `A newer Codex instruction superseded this ChatGPT response`
 
-Update to `pi-chatgpt-web` v0.2.0 or newer. Older builds regenerated message IDs across tool-result rounds.
+Update to `pi-chatgpt-web` v0.2.1 or newer. Older builds regenerated message IDs across tool-result rounds.
 
 ### Local tools unavailable
 

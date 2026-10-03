@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1 - 2026-10-03
+
+- Align the host-provided `@earendil-works/pi-coding-agent` peer dependency with Pi package guidance by using the `"*"` range.
+- Update install and troubleshooting examples to the current release tag.
+
 ## 0.2.0 - 2026-10-03
 
 - Retarget the package to `earendil-works/pi` / `@earendil-works/pi-coding-agent` 1.0.0+.
