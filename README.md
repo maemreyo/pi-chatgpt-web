@@ -297,3 +297,5 @@ MIT
 ### Deep E2E stress suite
 
 The [deep audit](docs/DEEP_E2E_2026-10-03.md) includes Instant, Medium and High multi-tool/resume tests, all Pi summary paths, isolated concurrent actors, tool abort recovery, queued follow-up, image input, Firefox companion automation, installed review integration, HTTP/SSE fault injection, and nested tool authority checks. Reproducible scripts and sanitized machine evidence are retained in this repository. Use a new output directory for each run; live cases consume ChatGPT requests.
+
+New independent review acceptance runs select **Sol High**. The recorded Medium/Instant runs are historical regression evidence. Use Sol High for new live model work unless a different effort is explicitly requested.

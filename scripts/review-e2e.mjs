@@ -7,6 +7,13 @@ const root=resolve(process.argv[2]);
 const source=resolve(process.argv[3]);
 mkdirSync(root,{recursive:false});
 let script=readFileSync(source,"utf8");
+// New live acceptance uses Sol High; earlier Medium/Instant evidence stays historical.
+const legacyEffort='"--thinking", process.argv.includes("--instant") ? "off" : "medium"';
+const currentEffort='"--thinking", process.argv.includes("--instant") ? "off" : "high"';
+const effort=script.includes(legacyEffort)?legacyEffort:currentEffort;
+assert(script.includes(effort),"review thinking contract changed");
+script=script.replace(effort,'"--thinking", "high"');
+script=script.replace('process.argv.includes("--instant") ? "gpt-5.6-sol-instant" : "gpt-5.6-sol"','"gpt-5.6-sol"');
 if(process.env.PI_STRESS_REVIEW_EXTENSION){
  const extensions=["--no-extensions","--extension",resolve(process.env.PI_STRESS_REVIEW_EXTENSION),"--extension",resolve(process.env.PI_STRESS_EXTENSION)];
  script=script.replace('spawn("pi", [','spawn("pi", ['+extensions.map(v=>JSON.stringify(v)).join(",")+",");
@@ -19,7 +26,7 @@ script=script.replace(baseline,"mkdirSync(resolve(fixture, \".zamery\"), {recurs
 
 const driver=resolve(root,"driver.mjs");
 writeFileSync(driver,script.replace('const root = resolve(import.meta.dirname, "..");',"const root = "+JSON.stringify(root)+";"));
-const report={case:"review-integration",fixtureAuthority,pass:false,cases:[]};
+const report={case:"review-integration",model:"gpt-5.6-sol",thinking:"high",fixtureAuthority,pass:false,cases:[]};
 for (const [name,args] of [["bug",[]],["repaired",["--successor"]]]) {
  const result=spawnSync(process.execPath,[driver,...args],{encoding:"utf8",timeout:8*60_000});
  writeFileSync(resolve(root,name+".log"),result.stdout+"\n"+result.stderr);

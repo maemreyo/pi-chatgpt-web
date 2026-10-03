@@ -1214,5 +1214,149 @@
     "extension": "<home>/.pi/agent/git/github.com/maemreyo/pi-chatgpt-web/extensions/chatgpt-web.js",
     "at": 1791027062.4571679
   },
-  "closed_at": "2026-10-03T12:34:50.746240+00:00"
+  "closed_at": "2026-10-03T12:34:50.746240+00:00",
+  "installed_review_high": {
+    "case": "review-integration",
+    "model": "gpt-5.6-sol",
+    "thinking": "high",
+    "fixtureAuthority": "baseline AGENTS.md + frozen project authorization contract",
+    "pass": true,
+    "cases": [
+      {
+        "case": "bug",
+        "pass": true,
+        "candidate": "d8a04a54d10abef8cf58634eb12b552ca8c8149d",
+        "commandsVerified": true,
+        "tools": [
+          "code_review_capabilities",
+          "code_review_begin",
+          "code_review_manifest_page",
+          "code_review_rules",
+          "code_review_authority",
+          "code_review_context",
+          "code_review_context",
+          "code_review_diff",
+          "code_review_context",
+          "code_review_context",
+          "code_review_record",
+          "code_review_progress",
+          "code_review_record",
+          "code_review_record",
+          "code_review_record",
+          "code_review_record",
+          "code_review_record",
+          "code_review_record",
+          "code_review_progress",
+          "code_review_finalize",
+          "code_review_authority"
+        ],
+        "findings": 1,
+        "policyCoverage": "COMPLETE",
+        "accountingComplete": true,
+        "error": null,
+        "timeout": false,
+        "protocolErrors": [
+          {
+            "tool": "code_review_record",
+            "code": "FINDING_REFERENCE_INVALID"
+          }
+        ],
+        "baseContextEvidence": [
+          {
+            "path": "AGENTS.md",
+            "representation": "text",
+            "sha256": "dd31cb9e17e9abee01e6e3e4f815ee1739a995741124154b213c65bab2559cdc",
+            "receiptId": "mr_647d6fdbecc4c7fa5cc20c7448c83eae",
+            "complete": true
+          },
+          {
+            "path": "CLAUDE.md",
+            "representation": "path_absence",
+            "sha256": "ec558760da9f727b1d0b06a0731e320e17bfd97e0fd786d18c76f67e4fbc021d",
+            "receiptId": "mr_17d40bebc592afc55e70ebe7e1142e9d",
+            "complete": true
+          },
+          {
+            "path": ".zamery/review-contract.json",
+            "representation": "text",
+            "sha256": "552f0f29dee2538141a2becf59d81054d4aab0a6ea595ca91c27c2acb747e1c9",
+            "receiptId": "mr_6c87ac43eba429adde8f4bcc2f4f1df0",
+            "complete": true
+          }
+        ]
+      },
+      {
+        "case": "repaired",
+        "pass": true,
+        "candidate": "bb704306cadf14446935a9ecfb814a30ff016cb1",
+        "commandsVerified": true,
+        "tools": [
+          "code_review_capabilities",
+          "code_review_begin",
+          "code_review_rules",
+          "code_review_authority",
+          "code_review_context",
+          "code_review_context",
+          "code_review_context",
+          "code_review_context",
+          "code_review_context",
+          "code_review_diff",
+          "code_review_authority",
+          "code_review_record",
+          "code_review_record",
+          "code_review_record",
+          "code_review_record",
+          "code_review_record",
+          "code_review_progress",
+          "code_review_finalize",
+          "code_review_authority"
+        ],
+        "findings": 0,
+        "policyCoverage": "COMPLETE",
+        "accountingComplete": true,
+        "error": null,
+        "timeout": false,
+        "protocolErrors": [],
+        "baseContextEvidence": [
+          {
+            "path": "AGENTS.md",
+            "representation": "text",
+            "sha256": "dd31cb9e17e9abee01e6e3e4f815ee1739a995741124154b213c65bab2559cdc",
+            "receiptId": "mr_c54d6a86164aaef13ae8b9cf34907b5b",
+            "complete": true
+          },
+          {
+            "path": "CLAUDE.md",
+            "representation": "path_absence",
+            "sha256": "520516e1e97885cae643f6e667e6bcd7d477e994f185cca1eaedaf44c32ff72a",
+            "receiptId": "mr_2ca7f5047486c16cecd931be7b55c73e",
+            "complete": true
+          },
+          {
+            "path": "AGENTS.md",
+            "representation": "text",
+            "sha256": "dd31cb9e17e9abee01e6e3e4f815ee1739a995741124154b213c65bab2559cdc",
+            "receiptId": "mr_c54d6a86164aaef13ae8b9cf34907b5b",
+            "complete": true
+          },
+          {
+            "path": "CLAUDE.md",
+            "representation": "path_absence",
+            "sha256": "520516e1e97885cae643f6e667e6bcd7d477e994f185cca1eaedaf44c32ff72a",
+            "receiptId": "mr_2ca7f5047486c16cecd931be7b55c73e",
+            "complete": true
+          },
+          {
+            "path": ".zamery/review-contract.json",
+            "representation": "text",
+            "sha256": "552f0f29dee2538141a2becf59d81054d4aab0a6ea595ca91c27c2acb747e1c9",
+            "receiptId": "mr_702694d1da47840d32eb2a540bef53c7",
+            "complete": true
+          }
+        ]
+      }
+    ],
+    "actualEffortVerified": true
+  },
+  "live_model_preference": "Sol High for new live work; earlier Medium/Instant runs are historical evidence"
 }
