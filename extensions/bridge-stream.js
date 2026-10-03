@@ -97,8 +97,13 @@ export function wrapBridgeStream(source, {
     let terminal = false;
     let responseStarted = false;
     const fail = (message) => {
+      if (signal?.aborted && message.stopReason !== "aborted") {
+        message = { ...message, stopReason: "aborted", errorMessage: "Request was aborted" };
+      }
       const code = message.stopReason === "aborted" ? null : (manualRecoveryCode(message)
-        || (responseStarted && isRetryableAssistantError(message) ? "browser_response_interrupted" : null));
+        || (isRetryableAssistantError(message)
+          && !/\bECONNREFUSED\b|connection refused/i.test(message.errorMessage || "")
+          ? (responseStarted ? "browser_response_interrupted" : "browser_request_outcome_unknown") : null));
       onFailure({ code, message: message.errorMessage, at: new Date().toISOString() });
       const next = code ? {
         ...message,

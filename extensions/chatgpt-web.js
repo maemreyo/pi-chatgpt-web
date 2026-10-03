@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { openAIResponsesApi } from "@earendil-works/pi-ai/compat";
 import { Type } from "typebox";
 import { wrapBridgeStream } from "./bridge-stream.js";
@@ -246,6 +247,27 @@ function isEnvironmentInputItem(item) {
   return Array.isArray(kinds) && kinds.includes("environments.environment_context");
 }
 
+// Responses omits user item IDs. A previous current instruction must retain its
+// identity when it becomes history, or the bridge cannot prove steering/abort lineage.
+export function preserveUserHistoryIds(payload, context) {
+  if (!Array.isArray(payload?.input) || !Array.isArray(context?.messages)) return payload;
+  const users = context.messages.filter((message) => message?.role === "user"
+    && (typeof message.content === "string" ? message.content.length > 0 : message.content?.length > 0));
+  const items = payload.input.filter((item) => item?.role === "user" && !isEnvironmentInputItem(item));
+  if (users.length === 0 || users.length !== items.length) return payload;
+  let index = 0;
+  return {
+    ...payload,
+    input: payload.input.map((item) => {
+      if (item?.role !== "user" || isEnvironmentInputItem(item)) return item;
+      const user = users[index++];
+      if (typeof item.id === "string" && item.id) return item;
+      const key = JSON.stringify([user.timestamp ?? null, item.content]);
+      return { ...item, type: "message", id: "msg_" + createHash("sha256").update(key).digest("hex").slice(0, 32) };
+    }),
+  };
+}
+
 export function decoratePayload(payload, {
   turnId,
   threadId,
@@ -425,13 +447,21 @@ export function createChatGptWebExtension({ responsesApi = openAIResponsesApi() 
 
       const originalOnPayload = options.onPayload;
       let expectedSummaryPrompt;
+      // Pi branch summaries omit reasoning; the Responses default is "none",
+      // which Sol accounts can reject. Keep control requests on a supported effort.
+      const selectedThinking = summaryKind && model.reasoning ? pi.getThinkingLevel?.() : undefined;
+      const summaryReasoning = summaryKind && model.reasoning && !options.reasoning
+        ? (selectedThinking && selectedThinking !== "off" ? selectedThinking : "medium")
+        : undefined;
       const source = responsesApi.streamSimple(model, context, {
         ...options,
+        ...(summaryReasoning ? { reasoning: summaryReasoning } : {}),
         maxRetries: 0,
         onPayload: async (payload) => {
           let nextPayload = typeof originalOnPayload === "function"
             ? (await originalOnPayload(payload)) ?? payload
             : payload;
+          nextPayload = preserveUserHistoryIds(nextPayload, context);
           nextPayload = guardShellCommandTools(nextPayload);
           const bridgeModel = bridgeModelId(model.id);
           if (summaryKind) {

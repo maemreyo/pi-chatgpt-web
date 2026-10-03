@@ -239,6 +239,21 @@ test("branch summarization is routed as a tool-less browser compaction request",
   assert.equal(Object.hasOwn(output, "tools"), false);
 });
 
+test("Sol control summaries inherit session thinking or Medium, while ordinary requests keep their settings", async () => {
+  for (const [selected, explicit, expected] of [[undefined, undefined, "medium"], ["off", undefined, "medium"], ["high", undefined, "high"], ["high", "medium", "medium"]]) {
+    const { responsesApi, pi, provider } = setup();
+    pi.api.getThinkingLevel = () => selected;
+    const controller = new AbortController();
+    await pi.handlers.get("session_before_tree")({ signal: controller.signal,
+      preparation: { userWantsSummary: true, entriesToSummarize: [{}] } });
+    provider.streamSimple({ ...MODEL, reasoning: true }, { messages: [] },
+      { signal: controller.signal, sessionId: "branch", ...(explicit ? { reasoning: explicit } : {}) });
+    assert.equal(responsesApi.calls.at(-1).options.reasoning, expected);
+    provider.streamSimple({ ...MODEL, reasoning: true }, { messages: [] }, { sessionId: "ordinary-direct" });
+    assert.equal(responsesApi.calls.at(-1).options.reasoning, undefined);
+  }
+});
+
 test("direct summary routing never exposes the placeholder bearer as native Codex model routing", async () => {
   const { responsesApi, pi, provider } = setup();
   const ctx = sessionContext();

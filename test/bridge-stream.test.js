@@ -162,6 +162,17 @@ test("pre-submission errors and cancellation keep their original semantics", asy
   }
 });
 
+test("caller cancellation wins over a transport error and does not ask for manual replay", async () => {
+  const source = createAssistantMessageEventStream();
+  source.push({ type: "error", reason: "error", error: message("", { stopReason: "error", errorMessage: "Connection error." }) });
+  source.end();
+  const controller = new AbortController(); controller.abort();
+  const final = await wrapBridgeStream(source, { model: MODEL, signal: controller.signal }).result();
+  assert.equal(final.stopReason, "aborted");
+  assert.equal(final.errorMessage, "Request was aborted");
+  assert.equal(isRetryableAssistantError(final), false);
+});
+
 test("a truncated iterator resolves as an inspection-required error rather than hanging", async () => {
   const source = { async *[Symbol.asyncIterator]() { yield { type: "start", partial: message("") }; } };
   const result = await wrapBridgeStream(source, { model: MODEL }).result();
@@ -178,4 +189,25 @@ test("iterator exceptions and empty sanitized summaries produce terminal errors"
   const final = await wrapBridgeStream(invalid, { model: MODEL, summary: true, expectedPrompt: () => prompt }).result();
   assert.equal(final.stopReason, "error");
   assert.match(final.errorMessage, /empty summary/);
+});
+
+test("an ambiguous failure before response headers cannot replay a submitted browser request", async () => {
+  for (const text of [
+    'chatgpt-web API error (502): {"code":"upstream_server_error","retryable":false}',
+    'chatgpt-web API error (504): {"message":"ChatGPT browser request timed out"}',
+    "Connection error.",
+    "Request timed out.",
+    'chatgpt-web API error (429): {"code":"rate_limit_exceeded","retryable":false}',
+  ]) {
+    for (const summary of [false, true]) {
+      const source = createAssistantMessageEventStream();
+      source.push({ type: "error", reason: "error", error: message("", { stopReason: "error", errorMessage: text }) });
+      source.end();
+      let failure;
+      const result = await wrapBridgeStream(source, { model: MODEL, summary, onFailure: f => { failure = f; } }).result();
+      assert.equal(isRetryableAssistantError(result), false);
+      assert.match(result.errorMessage, /browser_request_outcome_unknown/);
+      assert.equal(failure.message, text);
+    }
+  }
 });

@@ -1,0 +1,634 @@
+{
+  "date": "2026-10-03",
+  "phase": "source verified; review successor and installed release acceptance pending",
+  "versions": {
+    "provider_candidate": "0.2.4",
+    "review_candidate": "0.1.1",
+    "pi": "1.0.0",
+    "bridge": "6.1.4",
+    "browser_pin": "50280c73865ad9b650b35ffc9856681d026b325c"
+  },
+  "provider_unit": {
+    "passed": 36,
+    "failed": 0,
+    "skipped": 0
+  },
+  "review_full_real_suite": {
+    "numTotalTestSuites": 64,
+    "numPassedTestSuites": 64,
+    "numFailedTestSuites": 0,
+    "numPendingTestSuites": 0,
+    "numTotalTests": 223,
+    "numPassedTests": 223,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "numTodoTests": 0,
+    "startTime": 1791026044813,
+    "success": true
+  },
+  "stress_cases": [
+    {
+      "case": "instant",
+      "pass": true,
+      "startedAt": 1791024803.3671901,
+      "model": "gpt-5.6-sol-instant",
+      "thinking": "off",
+      "sessionRecall": true,
+      "sideEffectsExactlyOnce": true,
+      "beforeResume": {
+        "toolCalls": 15,
+        "tools": [
+          "bash",
+          "edit",
+          "read",
+          "shell_command",
+          "write"
+        ],
+        "assistantResponses": 15,
+        "retryEvents": 0,
+        "routes": [
+          "ordinary-turn route=turn",
+          "tool-continuation route=turn",
+          "tool-continuation route=turn",
+          "tool-continuation route=turn",
+          "tool-continuation route=turn",
+          "tool-continuation route=turn",
+          "tool-continuation route=turn",
+          "tool-continuation route=turn",
+          "tool-continuation route=turn",
+          "tool-continuation route=turn",
+          "ordinary-turn route=turn",
+          "tool-continuation route=turn",
+          "tool-continuation route=turn",
+          "tool-continuation route=turn",
+          "tool-continuation route=turn"
+        ]
+      },
+      "afterResume": {
+        "toolCalls": 2,
+        "tools": [
+          "bash",
+          "shell_command"
+        ],
+        "assistantResponses": 3,
+        "retryEvents": 0,
+        "routes": [
+          "ordinary-turn route=turn",
+          "ordinary-turn route=turn",
+          "tool-continuation route=turn"
+        ]
+      },
+      "finishedAt": 1791024928.1239822
+    },
+    {
+      "case": "medium",
+      "pass": true,
+      "startedAt": 1791024928.1246028,
+      "model": "gpt-5.6-sol",
+      "thinking": "medium",
+      "sessionRecall": true,
+      "sideEffectsExactlyOnce": true,
+      "beforeResume": {
+        "toolCalls": 13,
+        "tools": [
+          "bash",
+          "edit",
+          "read",
+          "shell_command",
+          "write"
+        ],
+        "assistantResponses": 13,
+        "retryEvents": 0,
+        "routes": [
+          "ordinary-turn route=turn",
+          "tool-continuation route=turn",
+          "tool-continuation route=turn",
+          "tool-continuation route=turn",
+          "tool-continuation route=turn",
+          "tool-continuation route=turn",
+          "tool-continuation route=turn",
+          "tool-continuation route=turn",
+          "ordinary-turn route=turn",
+          "tool-continuation route=turn",
+          "tool-continuation route=turn",
+          "tool-continuation route=turn",
+          "tool-continuation route=turn"
+        ]
+      },
+      "afterResume": {
+        "toolCalls": 3,
+        "tools": [
+          "bash",
+          "read",
+          "shell_command"
+        ],
+        "assistantResponses": 4,
+        "retryEvents": 0,
+        "routes": [
+          "ordinary-turn route=turn",
+          "ordinary-turn route=turn",
+          "tool-continuation route=turn",
+          "tool-continuation route=turn"
+        ]
+      },
+      "finishedAt": 1791025135.478335
+    },
+    {
+      "case": "high",
+      "pass": true,
+      "startedAt": 1791025135.479323,
+      "model": "gpt-5.6-sol",
+      "thinking": "high",
+      "sessionRecall": true,
+      "sideEffectsExactlyOnce": true,
+      "beforeResume": {
+        "toolCalls": 11,
+        "tools": [
+          "bash",
+          "edit",
+          "read",
+          "shell_command",
+          "write"
+        ],
+        "assistantResponses": 11,
+        "retryEvents": 0,
+        "routes": [
+          "ordinary-turn route=turn",
+          "tool-continuation route=turn",
+          "tool-continuation route=turn",
+          "tool-continuation route=turn",
+          "tool-continuation route=turn",
+          "tool-continuation route=turn",
+          "ordinary-turn route=turn",
+          "tool-continuation route=turn",
+          "tool-continuation route=turn",
+          "tool-continuation route=turn",
+          "tool-continuation route=turn"
+        ]
+      },
+      "afterResume": {
+        "toolCalls": 2,
+        "tools": [
+          "bash",
+          "shell_command"
+        ],
+        "assistantResponses": 3,
+        "retryEvents": 0,
+        "routes": [
+          "ordinary-turn route=turn",
+          "ordinary-turn route=turn",
+          "tool-continuation route=turn"
+        ]
+      },
+      "finishedAt": 1791025294.389461
+    },
+    {
+      "case": "multiturn-compact",
+      "pass": true,
+      "startedAt": 1791025294.391409,
+      "summaryChars": 2474,
+      "multiTurnRecall": true,
+      "appendixAbsent": true,
+      "bothSummaryKinds": true,
+      "toolCalls": 2,
+      "tools": [
+        "bash",
+        "shell_command"
+      ],
+      "assistantResponses": 5,
+      "retryEvents": 0,
+      "routes": [
+        "ordinary-turn route=turn",
+        "ordinary-turn route=turn",
+        "ordinary-turn route=turn",
+        "tool-continuation route=turn",
+        "compaction-summary route=compaction",
+        "turn-prefix-summary route=compaction",
+        "ordinary-turn route=turn"
+      ],
+      "finishedAt": 1791025480.373315
+    },
+    {
+      "case": "abort-tool",
+      "pass": true,
+      "startedAt": 1791025480.374378,
+      "abortPreventedLateWrite": true,
+      "sameSessionRecovery": true,
+      "toolCalls": 4,
+      "tools": [
+        "bash",
+        "shell_command"
+      ],
+      "assistantResponses": 4,
+      "retryEvents": 0,
+      "routes": [
+        "ordinary-turn route=turn",
+        "ordinary-turn route=turn",
+        "tool-continuation route=turn"
+      ],
+      "finishedAt": 1791025512.8835819
+    },
+    {
+      "case": "installed-status",
+      "pass": true,
+      "startedAt": 1791025646.793092,
+      "commandsLoaded": true,
+      "bridgeReady": true,
+      "reviewReady": true,
+      "toolCalls": 0,
+      "tools": [],
+      "assistantResponses": 1,
+      "retryEvents": 0,
+      "routes": [
+        "ordinary-turn route=turn"
+      ],
+      "finishedAt": 1791025661.122253
+    },
+    {
+      "case": "image",
+      "pass": true,
+      "startedAt": 1791025514.5398889,
+      "imageInputVerified": true,
+      "fixture": "512x256 RGB PNG, two color halves",
+      "toolCalls": 0,
+      "tools": [],
+      "assistantResponses": 1,
+      "retryEvents": 0,
+      "routes": [
+        "ordinary-turn route=turn"
+      ],
+      "finishedAt": 1791025530.21887
+    },
+    {
+      "case": "queued-follow-up",
+      "pass": true,
+      "startedAt": 1791025530.21914,
+      "queuedFollowUpCompleted": true,
+      "orderedSideEffects": true,
+      "toolCalls": 4,
+      "tools": [
+        "bash",
+        "shell_command"
+      ],
+      "assistantResponses": 4,
+      "retryEvents": 0,
+      "routes": [
+        "ordinary-turn route=turn",
+        "tool-continuation route=turn",
+        "tool-continuation route=turn",
+        "tool-continuation route=turn"
+      ],
+      "finishedAt": 1791025574.050405
+    },
+    {
+      "case": "concurrent",
+      "pass": true,
+      "startedAt": 1791025606.109417,
+      "actors": [
+        {
+          "actor": 1,
+          "recall": true,
+          "singleWrite": true,
+          "toolCalls": 2,
+          "tools": [
+            "bash",
+            "shell_command"
+          ],
+          "assistantResponses": 3,
+          "retryEvents": 0,
+          "routes": [
+            "ordinary-turn route=turn",
+            "tool-continuation route=turn",
+            "ordinary-turn route=turn"
+          ]
+        },
+        {
+          "actor": 2,
+          "recall": true,
+          "singleWrite": true,
+          "toolCalls": 2,
+          "tools": [
+            "bash",
+            "shell_command"
+          ],
+          "assistantResponses": 3,
+          "retryEvents": 0,
+          "routes": [
+            "ordinary-turn route=turn",
+            "tool-continuation route=turn",
+            "ordinary-turn route=turn"
+          ]
+        }
+      ],
+      "finishedAt": 1791025646.792565
+    }
+  ],
+  "reports": {
+    "http_sse_faults": {
+      "pass": true,
+      "cases": [
+        {
+          "case": "multipart",
+          "pass": true,
+          "requests": 1,
+          "retryEvents": 0,
+          "error": "ChatGPT Web needs manual recovery (multipart_stage_3_acknowledgement). The request may already have been submitted. Inspect the ChatGPT tab before continuing; automatic replay is disabled. Details: /chatgpt-web-status.",
+          "exitCode": 0
+        },
+        {
+          "case": "submitted",
+          "pass": true,
+          "requests": 1,
+          "retryEvents": 0,
+          "error": "ChatGPT Web needs manual recovery (chatgpt_submitted_turn_failed). The request may already have been submitted. Inspect the ChatGPT tab before continuing; automatic replay is disabled. Details: /chatgpt-web-status.",
+          "exitCode": 0
+        },
+        {
+          "case": "tool-wait",
+          "pass": true,
+          "requests": 1,
+          "retryEvents": 0,
+          "error": "ChatGPT Web needs manual recovery (tool_result_not_observed). The request may already have been submitted. Inspect the ChatGPT tab before continuing; automatic replay is disabled. Details: /chatgpt-web-status.",
+          "exitCode": 0
+        },
+        {
+          "case": "inconsistent",
+          "pass": true,
+          "requests": 1,
+          "retryEvents": 0,
+          "error": "ChatGPT Web needs manual recovery (browser_stream_inconsistent). The request may already have been submitted. Inspect the ChatGPT tab before continuing; automatic replay is disabled. Details: /chatgpt-web-status.",
+          "exitCode": 0
+        },
+        {
+          "case": "protocol",
+          "pass": true,
+          "requests": 1,
+          "retryEvents": 0,
+          "error": "ChatGPT Web needs manual recovery (multipart_protocol_violation). The request may already have been submitted. Inspect the ChatGPT tab before continuing; automatic replay is disabled. Details: /chatgpt-web-status.",
+          "exitCode": 0
+        },
+        {
+          "case": "stopped",
+          "pass": true,
+          "requests": 1,
+          "retryEvents": 0,
+          "error": "ChatGPT Web needs manual recovery (chatgpt_stopped_thinking). The request may already have been submitted. Inspect the ChatGPT tab before continuing; automatic replay is disabled. Details: /chatgpt-web-status.",
+          "exitCode": 0
+        },
+        {
+          "case": "generic-502",
+          "pass": true,
+          "requests": 1,
+          "retryEvents": 0,
+          "error": "ChatGPT Web needs manual recovery (browser_request_outcome_unknown). The request may already have been submitted. Inspect the ChatGPT tab before continuing; automatic replay is disabled. Details: /chatgpt-web-status.",
+          "exitCode": 0
+        },
+        {
+          "case": "generic-timeout",
+          "pass": true,
+          "requests": 1,
+          "retryEvents": 0,
+          "error": "ChatGPT Web needs manual recovery (browser_request_outcome_unknown). The request may already have been submitted. Inspect the ChatGPT tab before continuing; automatic replay is disabled. Details: /chatgpt-web-status.",
+          "exitCode": 0
+        },
+        {
+          "case": "closed-before-headers",
+          "pass": true,
+          "requests": 1,
+          "retryEvents": 0,
+          "error": "ChatGPT Web needs manual recovery (browser_request_outcome_unknown). The request may already have been submitted. Inspect the ChatGPT tab before continuing; automatic replay is disabled. Details: /chatgpt-web-status.",
+          "exitCode": 0
+        },
+        {
+          "case": "truncated-sse",
+          "pass": true,
+          "requests": 1,
+          "retryEvents": 0,
+          "error": "ChatGPT Web needs manual recovery (incomplete_browser_response). The request may already have been submitted. Inspect the ChatGPT tab before continuing; automatic replay is disabled. Details: /chatgpt-web-status.",
+          "exitCode": 0
+        },
+        {
+          "case": "partial-disconnect",
+          "pass": true,
+          "requests": 1,
+          "retryEvents": 0,
+          "error": "ChatGPT Web needs manual recovery (incomplete_browser_response). The request may already have been submitted. Inspect the ChatGPT tab before continuing; automatic replay is disabled. Details: /chatgpt-web-status.",
+          "exitCode": 0
+        },
+        {
+          "case": "auth-expired",
+          "pass": true,
+          "requests": 1,
+          "retryEvents": 0,
+          "error": "chatgpt-web API error (401): {\"type\":\"request_error\",\"code\":\"chatgpt_session_expired\",\"message\":\"Sign in required\",\"retryable\":false}",
+          "exitCode": 0
+        },
+        {
+          "case": "invalid-input",
+          "pass": true,
+          "requests": 1,
+          "retryEvents": 0,
+          "error": "chatgpt-web API error (400): {\"type\":\"request_error\",\"code\":\"invalid_request\",\"message\":\"Malformed request\",\"retryable\":false}",
+          "exitCode": 0
+        },
+        {
+          "case": "rate-limit",
+          "pass": true,
+          "requests": 1,
+          "retryEvents": 0,
+          "error": "ChatGPT Web needs manual recovery (browser_request_outcome_unknown). The request may already have been submitted. Inspect the ChatGPT tab before continuing; automatic replay is disabled. Details: /chatgpt-web-status.",
+          "exitCode": 0
+        }
+      ],
+      "at": 1791024618.358138,
+      "extension": "<home>/Documents/zaob-dev/pi-chatgpt-web/extensions/chatgpt-web.js"
+    },
+    "tool_authority": {
+      "pass": true,
+      "cases": [
+        {
+          "case": "no-bash",
+          "pass": true,
+          "requests": 2,
+          "toolErrorObserved": true,
+          "noSideEffects": true,
+          "authorityVerified": true,
+          "exitCode": 0
+        },
+        {
+          "case": "nested-hook-block",
+          "pass": true,
+          "requests": 2,
+          "toolErrorObserved": true,
+          "noSideEffects": true,
+          "authorityVerified": true,
+          "exitCode": 0
+        }
+      ]
+    },
+    "branch_summary": {
+      "case": "branch-summary",
+      "pass": true,
+      "model": "gpt-5.6-sol",
+      "thinking": "medium",
+      "summaryChars": 1468,
+      "recall": true,
+      "appendixAbsent": true,
+      "preparations": [
+        {
+          "wantsSummary": true,
+          "entries": 2
+        }
+      ],
+      "toolCalls": 0
+    },
+    "automatic_compaction": {
+      "mode": "auto",
+      "extension": "<home>/Documents/zaob-dev/pi-chatgpt-web/extensions/chatgpt-web.js",
+      "startedAt": 1791025358.295649,
+      "pass": true,
+      "summaryChars": 748,
+      "inputBefore": 13301,
+      "inputAfter": 10284,
+      "reductionTokens": 3017,
+      "recall": true,
+      "canonicalAppendixAbsent": true,
+      "model": "gpt-5.6-sol",
+      "thinking": "medium",
+      "finishedAt": 1791025584.4135182
+    },
+    "firefox": {
+      "case": "firefox-integration",
+      "pass": true,
+      "model": "gpt-5.6-sol",
+      "thinking": "medium",
+      "provider": "firefox",
+      "clickRequests": 1,
+      "ownedAfter": 0,
+      "tools": [
+        "browser_status",
+        "browser_tabs",
+        "browser_snapshot",
+        "browser_act",
+        "browser_snapshot",
+        "browser_act",
+        "browser_snapshot",
+        "browser_tabs",
+        "browser_tabs"
+      ],
+      "toolErrors": 0,
+      "cleanupOwnedAfter": 0
+    }
+  },
+  "health": {
+    "baseline": {
+      "status": "ok",
+      "version": "6.1.4",
+      "pid": 1896,
+      "active_http_turns": 0,
+      "active_browser_turns": 0,
+      "accepting_turns": true
+    },
+    "final": {
+      "status": "ok",
+      "version": "6.1.4",
+      "pid": 1896,
+      "active_http_turns": 0,
+      "active_browser_turns": 0,
+      "accepting_turns": true
+    }
+  },
+  "audit_observations": {
+    "missing_grant": {
+      "case": "firefox-integration",
+      "pass": false,
+      "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ 'BROWSER\\\\_AUTHORIZATION\\\\_REQUIRED: Firefox companion authorization is not granted for the current native-host session.'\n- 'BROWSERSTRESSOK'\n\n    at file://<home>/Documents/zaob-dev/pi-chatgpt-web/scripts/browser-e2e.mjs:37:9\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)",
+      "clickRequests": 0,
+      "browserOutcomes": [
+        {
+          "tool": "browser_tabs",
+          "error": {
+            "code": "BROWSER_AUTHORIZATION_REQUIRED",
+            "message": "Firefox companion authorization is not granted for the current native-host session",
+            "reason": "current_host_session_not_granted",
+            "outcome": "not_started"
+          }
+        }
+      ],
+      "cleanupOwnedAfter": 0
+    },
+    "review_missing_base_evidence": {
+      "case": "review-integration",
+      "pass": false,
+      "cases": [
+        {
+          "case": "bug",
+          "pass": true,
+          "candidate": "23ee4bad1035d6861be84444042e6b848d155cb9",
+          "commandsVerified": true,
+          "tools": [
+            "code_review_capabilities",
+            "code_review_begin",
+            "code_review_manifest_page",
+            "code_review_rules",
+            "code_review_authority",
+            "code_review_diff",
+            "code_review_context",
+            "code_review_context",
+            "code_review_progress",
+            "code_review_record",
+            "code_review_record",
+            "code_review_record",
+            "code_review_record",
+            "code_review_record",
+            "code_review_record",
+            "code_review_record",
+            "code_review_record",
+            "code_review_record",
+            "code_review_record",
+            "code_review_finalize",
+            "code_review_authority"
+          ],
+          "findings": 1,
+          "policyCoverage": "COMPLETE",
+          "accountingComplete": true,
+          "error": null,
+          "timeout": false
+        },
+        {
+          "case": "repaired",
+          "pass": false,
+          "candidate": "6eafcc277031d43d2cc4ff2a74ff8c1f52860e09",
+          "commandsVerified": true,
+          "tools": [
+            "code_review_capabilities",
+            "code_review_begin",
+            "code_review_rules",
+            "code_review_diff",
+            "code_review_authority",
+            "code_review_context",
+            "code_review_context",
+            "code_review_context",
+            "code_review_progress",
+            "code_review_record",
+            "code_review_record",
+            "code_review_record",
+            "code_review_record",
+            "code_review_record",
+            "code_review_finalize"
+          ],
+          "error": null,
+          "timeout": false
+        }
+      ]
+    },
+    "tiny_image": {
+      "case": "image",
+      "pass": false,
+      "startedAt": 1791024515.461087,
+      "error": "BLUE BLUE",
+      "finishedAt": 1791024530.86356
+    },
+    "status_assertion": "Initial installed-status assertion expected uppercase OCR; actual READY JSON uses lowercase ocr. Fixed schema assertion and rerun passed."
+  }
+}

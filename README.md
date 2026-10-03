@@ -17,7 +17,7 @@ Current target:
 - Full multi-round tool loop tested: ChatGPT Web → Responses tool call → Pi local tool execution → tool result → ChatGPT Web continuation
 - Manual and threshold auto-compaction tested through ChatGPT Web, including multipart staging and post-compaction continuation
 
-> **Version note:** `v0.1.0` targeted the older `@mariozechner/pi-coding-agent` package and is deprecated. Use `v0.2.3` or newer for `earendil-works/pi`.
+> **Version note:** `v0.1.0` targeted the older `@mariozechner/pi-coding-agent` package and is deprecated. Use `v0.2.4` or newer for `earendil-works/pi`.
 
 ## How it works
 
@@ -86,7 +86,7 @@ For Pi to use local tools through a ChatGPT Web turn, configure the **Full harne
 From the tagged GitHub release:
 
 ```bash
-pi install git:github.com/maemreyo/pi-chatgpt-web@v0.2.3
+pi install git:github.com/maemreyo/pi-chatgpt-web@v0.2.4
 ```
 
 Or track the repository default branch:
@@ -232,7 +232,7 @@ pi --list-models chatgpt-web
 
 ### `A newer Codex instruction superseded this ChatGPT response`
 
-Update to `pi-chatgpt-web` v0.2.2 or newer. Older builds before v0.2.0 regenerated message IDs across tool-result rounds; v0.2.2 also adds the Pi `bash` → Codex Native `shell_command` compatibility path.
+Update to `pi-chatgpt-web` v0.2.4 or newer. User message identities now remain stable across tool rounds, history, resumed sessions, and abort recovery so the bridge can prove instruction lineage.
 
 ### Auto-compaction fails with a native authentication / 401 error
 
@@ -242,7 +242,7 @@ Update to `pi-chatgpt-web` v0.2.2 or newer. Earlier builds only rewrote ordinary
 
 From v0.2.3, the extension disables SDK HTTP replay and prevents Pi from automatically replaying known post-submission browser failures. The prompt may already have been accepted by ChatGPT, and tools may already have run. Pi reports that manual recovery is required instead of silently sending the task again.
 
-Run /chatgpt-web-status in the same Pi process to see the original failure and timestamp, then inspect the ChatGPT tab before deciding how to continue. Last-failure diagnostics are process-local and historical; bridge readiness alone does not prove that a failed turn completed. Pre-submission connection errors remain eligible for Pi's normal retry policy, and cancellation remains cancellation. This adapter does not guarantee recovery from a stopped upstream ChatGPT response or change bridge deadlines.
+Run /chatgpt-web-status in the same Pi process to see the original failure and timestamp, then inspect the ChatGPT tab before deciding how to continue. Last-failure diagnostics are process-local and historical; bridge readiness alone does not prove that a failed turn completed. Only explicit connection-refused failures remain eligible for Pi's normal retry policy. Generic transport failures, 502/504 and 429 do not prove that submission never happened and require manual recovery. Cancellation remains cancellation. This adapter does not guarantee recovery from a stopped upstream ChatGPT response or change bridge deadlines.
 
 ### Local tools unavailable
 
@@ -293,3 +293,7 @@ Each output directory must be new. The retry acceptance uses a local HTTP failur
 ## License
 
 MIT
+
+### Deep E2E stress suite
+
+The [deep audit](docs/DEEP_E2E_2026-10-03.md) includes Instant, Medium and High multi-tool/resume tests, all Pi summary paths, isolated concurrent actors, tool abort recovery, queued follow-up, image input, Firefox companion automation, installed review integration, HTTP/SSE fault injection, and nested tool authority checks. Reproducible scripts and sanitized machine evidence are retained in this repository. Use a new output directory for each run; live cases consume ChatGPT requests.

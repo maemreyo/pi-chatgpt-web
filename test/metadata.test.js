@@ -2,6 +2,25 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { bridgeModelId, checkBridgeStatus, decoratePayload, formatBridgeStatus } from "../extensions/chatgpt-web.js";
 
+test("user IDs persist when current instructions become history, across tool rounds and resume", async () => {
+  const { preserveUserHistoryIds } = await import("../extensions/chatgpt-web.js");
+  const first = { role: "user", content: [{ type: "input_text", text: "first" }] };
+  const second = { role: "user", content: [{ type: "input_text", text: "second" }] };
+  const context = { messages: [{ role: "user", content: "first", timestamp: 100 }, { role: "user", content: "second", timestamp: 200 }] };
+  const before = preserveUserHistoryIds({ input: [first] }, { messages: [context.messages[0]] });
+  const after = preserveUserHistoryIds({ input: [first, second] }, context);
+  assert.equal(before.input[0].id, after.input[0].id);
+  assert.notEqual(after.input[0].id, after.input[1].id);
+  assert.equal(preserveUserHistoryIds({ input: [first, second] }, structuredClone(context)).input[0].id, before.input[0].id);
+  assert.equal(Object.hasOwn(first, "id"), false);
+  const repeated = preserveUserHistoryIds({ input: [first, first] }, { messages: [context.messages[0], { ...context.messages[0], timestamp: 300 }] });
+  assert.notEqual(repeated.input[0].id, repeated.input[1].id);
+  const supplied = { ...first, id: "msg_external" };
+  assert.equal(preserveUserHistoryIds({ input: [supplied] }, { messages: [context.messages[0]] }).input[0].id, "msg_external");
+  const ambiguous = { input: [first, second] };
+  assert.strictEqual(preserveUserHistoryIds(ambiguous, { messages: [context.messages[0]] }), ambiguous);
+});
+
 test("bridgeModelId prefixes public Pi model IDs", () => {
   assert.equal(bridgeModelId("gpt-5.6-sol"), "chatgpt-web/gpt-5.6-sol");
   assert.equal(bridgeModelId("chatgpt-web/gpt-5.6-sol"), "chatgpt-web/gpt-5.6-sol");
@@ -40,7 +59,6 @@ test("decoratePayload adds Codex turn metadata to the current user message", () 
   assert.equal(metadata.turn_id, "11111111-1111-4111-8111-111111111111");
   assert.deepEqual(metadata.workspaces, { "/tmp/workspace": {} });
 });
-
 
 test("checkBridgeStatus uses the bridge health endpoint and reports readiness", async () => {
   const status = await checkBridgeStatus("http://127.0.0.1:17841/v1/", {

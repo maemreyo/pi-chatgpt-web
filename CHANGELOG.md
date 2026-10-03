@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.4 - 2026-10-03
+
+- Prevent Pi from replaying ambiguous generic 502/504, rate-limit and transport failures; retain original diagnostics and explicit connection-refused retry behavior. Caller abort takes precedence over transport errors.
+- Preserve user message IDs when instructions move into history, fixing same-session recovery after abort and keeping tool/resume lineage stable.
+- Inherit supported thinking effort for Sol control summaries, fixing branch summaries that otherwise requested unsupported effort none.
+- Add reproducible deep E2E scripts for model/tool/resume, summary paths, concurrent isolation, cancellation, queued follow-up, image input, Firefox and review integration, injected HTTP/SSE faults, and nested tool authority.
+
 ## 0.2.3 - 2026-10-03
 
 - Stop the complete shell script if its requested working directory cannot be entered, including semicolon, multiline, and asynchronous command lists. Keep quoted paths and the script's exit status intact.
