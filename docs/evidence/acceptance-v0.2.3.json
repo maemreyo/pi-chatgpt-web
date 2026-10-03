@@ -104,5 +104,22 @@
   "fileSha256": {
     "extensions/chatgpt-web.js": "daffc2269be148dc9d6d7b0752e82b0d172edd5ee9269674cc59d4d34d9610b7",
     "extensions/bridge-stream.js": "a56fa2d4e6d666f8cc769810ef93dc56e67f8ac16132e58234c5a3c8d3f5bee0"
+  },
+  "installation": {
+    "package": "git:github.com/maemreyo/pi-chatgpt-web@v0.2.3",
+    "checkoutSha": "a56e9d881b7e16f328f6153e29f2e07fc11d3405",
+    "fileHashesMatchSource": true,
+    "freshDefaultAutoloadProcess": {
+      "pass": true,
+      "autoload": true,
+      "model": "gpt-5.6-sol-instant",
+      "version": "0.2.3",
+      "status": "ChatGPT Web bridge: ready (version 6.1.4, mode full, HTTP 200)\nEndpoint: http://127.0.0.1:17841/v1\nAccepting turns: yes",
+      "reply": "INSTALLEDV023OK",
+      "commandLoaded": true,
+      "toolCalls": 0
+    },
+    "sharedBridgePidUnchanged": 13246,
+    "sharedPiOrWorkbenchRestarted": false
   }
 }

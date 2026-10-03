@@ -24,3 +24,11 @@ The final error guards additionally cover generic connection loss after response
 The adapter cannot guarantee that an external ChatGPT response will never stall. It does not alter bridge deadlines, restart the browser, or blindly resend a possibly accepted task. A known ambiguous failure requires inspecting the ChatGPT tab before deciding how to continue. Bridge health alone does not establish the outcome of an earlier failed turn.
 
 Summary usage remains the actual upstream usage, including any tokens spent generating the bridge appendix. Removing that appendix lowers the next request's context; it does not undo generation usage already incurred. Previous saved summaries are not rewritten.
+
+## Installed package closeout
+
+- Release tag v0.2.3 and installed checkout both resolve to a56e9d881b7e16f328f6153e29f2e07fc11d3405.
+- Pi settings contain one pi-chatgpt-web package entry, pinned to v0.2.3.
+- Both installed extension files match the verified source hashes.
+- A fresh Pi RPC process with default extension autoload found /chatgpt-web-status, reported the bridge ready, and returned INSTALLEDV023OK through Sol Instant without tool calls.
+- No npm publication, shared Pi/Workbench restart, or bridge restart was performed. Existing Pi processes are not forcibly reloaded; the next normal start loads v0.2.3.
