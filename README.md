@@ -15,8 +15,9 @@ Current target:
 - GPT-5.6 Sol Medium tested
 - GPT-5.6 Sol High tested
 - Full multi-round tool loop tested: ChatGPT Web → Responses tool call → Pi local tool execution → tool result → ChatGPT Web continuation
+- Manual and threshold auto-compaction tested through ChatGPT Web, including multipart staging and post-compaction continuation
 
-> **Version note:** `v0.1.0` targeted the older `@mariozechner/pi-coding-agent` package and is deprecated. Use `v0.2.1` or newer for `earendil-works/pi`.
+> **Version note:** `v0.1.0` targeted the older `@mariozechner/pi-coding-agent` package and is deprecated. Use `v0.2.2` or newer for `earendil-works/pi`.
 
 ## How it works
 
@@ -85,7 +86,7 @@ For Pi to use local tools through a ChatGPT Web turn, configure the **Full harne
 From the tagged GitHub release:
 
 ```bash
-pi install git:github.com/maemreyo/pi-chatgpt-web@v0.2.1
+pi install git:github.com/maemreyo/pi-chatgpt-web@v0.2.2
 ```
 
 Or track the repository default branch:
@@ -124,9 +125,21 @@ pi --provider chatgpt-web --model gpt-5.6-sol --thinking high
 
 You can also choose `chatgpt-web` models from Pi's model picker.
 
+### Check bridge status
+
+Inside Pi, run:
+
+```text
+/chatgpt-web-status
+```
+
+The command checks the bridge's unauthenticated `/healthz` endpoint derived from `PI_CHATGPT_WEB_BASE_URL` (or the default `http://127.0.0.1:17841/v1`). It reports whether the expected `codex-chatgpt-web` service is healthy and accepting turns, plus the bridge version and mode when available. It intentionally does not use `/v1/models`: that route is a native Codex passthrough and requires upstream ChatGPT Bearer authentication that this Pi extension does not own.
+
 ## Tool use
 
 With `codex-chatgpt-web` Full harness configured, use Pi normally. Pi's active tools are advertised in the Responses request. When ChatGPT Web requests one through the Full harness connector, `codex-chatgpt-web` emits a Responses tool call back to Pi; Pi executes it and the extension keeps the same native turn identity across the continuation round.
+
+Pi calls its built-in command tool `bash`, while current Codex Native command routing recognizes `exec_command` or `shell_command`. From `v0.2.2`, this extension exposes `shell_command` only on `chatgpt-web` turns when Pi's real `bash` tool is active. The alias delegates back through Pi's nested-tool API, so normal Pi tool validation, permission hooks, lifecycle events, streaming output, and error handling remain authoritative. It does not create command access when `bash` is disabled.
 
 A minimal non-interactive test:
 
@@ -143,6 +156,12 @@ pi --provider chatgpt-web \
 ```
 
 Browser-only mode can still use the Web model, but `codex-chatgpt-web` intentionally does not expose the local-computer bridge in that mode.
+
+## Compaction and summaries
+
+Pi's compaction and branch-summary calls are model requests too. From `v0.2.2`, the extension routes manual compaction, threshold auto-compaction, split-turn prefix summaries, and branch summaries through the same ChatGPT Web provider path as ordinary turns. Summary requests are intentionally tool-less: they do not receive filesystem/workspace authority, and their native metadata identifies them as compaction control turns.
+
+This fixes the failure mode where normal ChatGPT Web turns worked but auto-compaction fell through to native Codex authentication and failed with an authentication-token/401 error. The compaction route also keeps retry identity stable and does not expose the local placeholder bearer to native Codex routing.
 
 ## Configuration
 
@@ -211,7 +230,11 @@ pi --list-models chatgpt-web
 
 ### `A newer Codex instruction superseded this ChatGPT response`
 
-Update to `pi-chatgpt-web` v0.2.1 or newer. Older builds regenerated message IDs across tool-result rounds.
+Update to `pi-chatgpt-web` v0.2.2 or newer. Older builds before v0.2.0 regenerated message IDs across tool-result rounds; v0.2.2 also adds the Pi `bash` → Codex Native `shell_command` compatibility path.
+
+### Auto-compaction fails with a native authentication / 401 error
+
+Update to `pi-chatgpt-web` v0.2.2 or newer. Earlier builds only rewrote ordinary provider requests; Pi summary requests could bypass that hook and reach the wrong native-auth route.
 
 ### Local tools unavailable
 

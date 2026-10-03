@@ -1,6 +1,6 @@
 {
   "name": "pi-chatgpt-web",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Use ChatGPT Web models from codex-chatgpt-web as a native provider in earendil-works/pi.",
   "type": "module",
   "license": "MIT",
@@ -41,6 +41,8 @@
     "LICENSE"
   ],
   "peerDependencies": {
-    "@earendil-works/pi-coding-agent": "*"
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*",
+    "typebox": "*"
   }
 }

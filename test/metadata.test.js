@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { bridgeModelId, decoratePayload } from "../extensions/chatgpt-web.js";
+import { bridgeModelId, checkBridgeStatus, decoratePayload, formatBridgeStatus } from "../extensions/chatgpt-web.js";
 
 test("bridgeModelId prefixes public Pi model IDs", () => {
   assert.equal(bridgeModelId("gpt-5.6-sol"), "chatgpt-web/gpt-5.6-sol");
@@ -41,6 +41,64 @@ test("decoratePayload adds Codex turn metadata to the current user message", () 
   assert.deepEqual(metadata.workspaces, { "/tmp/workspace": {} });
 });
 
+
+test("checkBridgeStatus uses the bridge health endpoint and reports readiness", async () => {
+  const status = await checkBridgeStatus("http://127.0.0.1:17841/v1/", {
+    timeoutMs: 50,
+    fetchImpl: async (url, init) => {
+      assert.equal(url, "http://127.0.0.1:17841/healthz");
+      assert.equal(init.method, "GET");
+      assert.equal(init.headers.accept, "application/json");
+      return new Response(JSON.stringify({
+        service: "codex-chatgpt-web",
+        status: "ok",
+        version: "6.1.4",
+        mode: "full",
+        accepting_turns: true,
+      }), { status: 200, headers: { "content-type": "application/json" } });
+    },
+  });
+
+  assert.equal(status.endpoint, "http://127.0.0.1:17841/v1");
+  assert.equal(status.reachable, true);
+  assert.equal(status.healthy, true);
+  assert.equal(status.httpStatus, 200);
+  assert.equal(status.mode, "full");
+  assert.equal(status.version, "6.1.4");
+  assert.equal(status.acceptingTurns, true);
+  assert.match(formatBridgeStatus(status), /bridge: ready/);
+  assert.match(formatBridgeStatus(status), /version 6\.1\.4/);
+  assert.match(formatBridgeStatus(status), /mode full/);
+  assert.match(formatBridgeStatus(status), /Accepting turns: yes/);
+});
+
+test("checkBridgeStatus rejects an unexpected service on the configured port", async () => {
+  const status = await checkBridgeStatus("http://bridge.example/v1", {
+    fetchImpl: async () => new Response(JSON.stringify({
+      service: "something-else",
+      status: "ok",
+      accepting_turns: true,
+    }), { status: 200, headers: { "content-type": "application/json" } }),
+  });
+
+  assert.equal(status.reachable, true);
+  assert.equal(status.healthy, false);
+  assert.equal(status.acceptingTurns, true);
+  assert.match(formatBridgeStatus(status), /bridge: not ready/);
+});
+
+test("checkBridgeStatus reports network failure without requiring a live bridge", async () => {
+  const status = await checkBridgeStatus(undefined, {
+    fetchImpl: async () => { throw new Error("connection refused"); },
+  });
+
+  assert.equal(status.reachable, false);
+  assert.equal(status.healthy, false);
+  assert.equal(status.httpStatus, null);
+  assert.equal(status.acceptingTurns, false);
+  assert.equal(status.error, "connection refused");
+  assert.match(formatBridgeStatus(status), /unreachable \(connection refused\)/);
+});
 
 test("keeps item identity stable across provider rounds", () => {
   const turn = {
