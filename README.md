@@ -17,7 +17,7 @@ Current target:
 - Full multi-round tool loop tested: ChatGPT Web → Responses tool call → Pi local tool execution → tool result → ChatGPT Web continuation
 - Manual and threshold auto-compaction tested through ChatGPT Web, including multipart staging and post-compaction continuation
 
-> **Version note:** `v0.1.0` targeted the older `@mariozechner/pi-coding-agent` package and is deprecated. Use `v0.2.2` or newer for `earendil-works/pi`.
+> **Version note:** `v0.1.0` targeted the older `@mariozechner/pi-coding-agent` package and is deprecated. Use `v0.2.3` or newer for `earendil-works/pi`.
 
 ## How it works
 
@@ -86,7 +86,7 @@ For Pi to use local tools through a ChatGPT Web turn, configure the **Full harne
 From the tagged GitHub release:
 
 ```bash
-pi install git:github.com/maemreyo/pi-chatgpt-web@v0.2.2
+pi install git:github.com/maemreyo/pi-chatgpt-web@v0.2.3
 ```
 
 Or track the repository default branch:
@@ -133,7 +133,7 @@ Inside Pi, run:
 /chatgpt-web-status
 ```
 
-The command checks the bridge's unauthenticated `/healthz` endpoint derived from `PI_CHATGPT_WEB_BASE_URL` (or the default `http://127.0.0.1:17841/v1`). It reports whether the expected `codex-chatgpt-web` service is healthy and accepting turns, plus the bridge version and mode when available. It intentionally does not use `/v1/models`: that route is a native Codex passthrough and requires upstream ChatGPT Bearer authentication that this Pi extension does not own.
+From v0.2.3, it also shows the last provider failure observed in the current Pi process. The command checks the bridge's unauthenticated `/healthz` endpoint derived from `PI_CHATGPT_WEB_BASE_URL` (or the default `http://127.0.0.1:17841/v1`). It reports whether the expected `codex-chatgpt-web` service is healthy and accepting turns, plus the bridge version and mode when available. It intentionally does not use `/v1/models`: that route is a native Codex passthrough and requires upstream ChatGPT Bearer authentication that this Pi extension does not own.
 
 ## Tool use
 
@@ -162,6 +162,8 @@ Browser-only mode can still use the Web model, but `codex-chatgpt-web` intention
 Pi's compaction and branch-summary calls are model requests too. From `v0.2.2`, the extension routes manual compaction, threshold auto-compaction, split-turn prefix summaries, and branch summaries through the same ChatGPT Web provider path as ordinary turns. Summary requests are intentionally tool-less: they do not receive filesystem/workspace authority, and their native metadata identifies them as compaction control turns.
 
 This fixes the failure mode where normal ChatGPT Web turns worked but auto-compaction fell through to native Codex authentication and failed with an authentication-token/401 error. The compaction route also keeps retry identity stable and does not expose the local placeholder bearer to native Codex routing.
+
+From v0.2.3, summaries exclude the bridge's Codex-specific latest-prompt appendix when it exactly matches the current summary request. This prevents the full history from being stored again as part of the summary. Ordinary assistant replies retain their original content. Summary text is delivered after validation; normal turns continue streaming incrementally. Reported usage still includes the actual upstream summary generation, including any tokens the bridge spent on its appendix.
 
 ## Configuration
 
@@ -236,6 +238,12 @@ Update to `pi-chatgpt-web` v0.2.2 or newer. Older builds before v0.2.0 regenerat
 
 Update to `pi-chatgpt-web` v0.2.2 or newer. Earlier builds only rewrote ordinary provider requests; Pi summary requests could bypass that hook and reach the wrong native-auth route.
 
+### Browser acknowledgement or submitted-turn failure
+
+From v0.2.3, the extension disables SDK HTTP replay and prevents Pi from automatically replaying known post-submission browser failures. The prompt may already have been accepted by ChatGPT, and tools may already have run. Pi reports that manual recovery is required instead of silently sending the task again.
+
+Run /chatgpt-web-status in the same Pi process to see the original failure and timestamp, then inspect the ChatGPT tab before deciding how to continue. Last-failure diagnostics are process-local and historical; bridge readiness alone does not prove that a failed turn completed. Pre-submission connection errors remain eligible for Pi's normal retry policy, and cancellation remains cancellation. This adapter does not guarantee recovery from a stopped upstream ChatGPT response or change bridge deadlines.
+
 ### Local tools unavailable
 
 `codex-chatgpt-web` is running in Browser-only mode. Complete the upstream Full harness/MCP setup and run **Verify runtime**.
@@ -270,6 +278,17 @@ pi --extension ./extensions/chatgpt-web.js \
 ```
 
 The package's compatibility target is the current `@earendil-works/pi-coding-agent`, not the legacy `@mariozechner/pi-coding-agent` package.
+
+Acceptance scripts run separate temporary Pi sessions against an already-running bridge. They do not restart Pi, Workbench, or the bridge:
+
+```bash
+python3 scripts/live-acceptance.py manual --output /tmp/pi-web-manual-unique
+python3 scripts/live-acceptance.py auto --output /tmp/pi-web-auto-unique
+python3 scripts/live-acceptance.py native --output /tmp/pi-web-native-unique
+python3 scripts/retry-acceptance.py --output /tmp/pi-web-retry-unique
+```
+
+Each output directory must be new. The retry acceptance uses a local HTTP failure fixture and actual Pi CLI with retries enabled; it does not send to ChatGPT. Live compaction acceptance verifies a saved summary without the control appendix, a smaller next request, and recall without repeating the expected marker in the follow-up question.
 
 ## License
 

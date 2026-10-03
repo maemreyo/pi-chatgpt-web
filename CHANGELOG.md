@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.3 - 2026-10-03
+
+- Stop the complete shell script if its requested working directory cannot be entered, including semicolon, multiline, and asynchronous command lists. Keep quoted paths and the script's exit status intact.
+- Remove the bridge's canonical latest-user-prompt appendix from Pi summaries only when its JSON string exactly matches the current summary request. Buffer summary events so the appendix cannot leak through streaming deltas or the stored result; preserve ordinary replies, reasoning, cancellation, and actual usage accounting.
+- Disable SDK-level HTTP replay. Prevent Pi's text-based retry policy from automatically replaying known browser post-submission failures, multipart acknowledgement failures, stopped-thinking responses, missing tool results, and incomplete terminal streams. Preserve original diagnostics in /chatgpt-web-status for the current process.
+- Add executable shell regressions, summary/event-frame coverage, retry-classifier coverage, and reproducible isolated Pi acceptance scripts.
+
 ## 0.2.2 - 2026-10-03
 
 - Route Pi manual compaction, threshold auto-compaction, split-turn prefix summaries, and branch summaries through the ChatGPT Web provider instead of falling through to native Codex authentication. Summary turns are intentionally tool-less and carry explicit compaction metadata.

@@ -1,0 +1,108 @@
+{
+  "version": "0.2.3",
+  "date": "2026-10-03",
+  "piVersion": "1.0.0",
+  "bridgeVersion": "6.1.4",
+  "bridgeMode": "full",
+  "regressions": {
+    "passed": 32,
+    "failed": 0,
+    "skipped": 0
+  },
+  "packDryRun": "PASS",
+  "reports": {
+    "manual": {
+      "mode": "manual",
+      "startedAt": 1791019777.1669068,
+      "pass": true,
+      "summaryChars": 935,
+      "inputBefore": 13285,
+      "inputAfter": 10290,
+      "reductionTokens": 2995,
+      "recall": true,
+      "canonicalAppendixAbsent": true,
+      "model": "gpt-5.6-sol",
+      "thinking": "medium",
+      "finishedAt": 1791019878.3019352
+    },
+    "auto": {
+      "mode": "auto",
+      "startedAt": 1791020140.584495,
+      "pass": true,
+      "summaryChars": 763,
+      "inputBefore": 13282,
+      "inputAfter": 10254,
+      "reductionTokens": 3028,
+      "recall": true,
+      "canonicalAppendixAbsent": true,
+      "model": "gpt-5.6-sol",
+      "thinking": "medium",
+      "finishedAt": 1791020351.530304
+    },
+    "native": {
+      "mode": "native",
+      "startedAt": 1791020354.179639,
+      "pass": true,
+      "nativeCommandCalls": 2,
+      "failedWorkdirCalls": 1,
+      "noWrongDirectoryWrite": true,
+      "quotedWorkdir": true,
+      "finishedAt": 1791020388.366821
+    },
+    "retry": {
+      "pass": true,
+      "cases": [
+        {
+          "case": "multipart",
+          "pass": true,
+          "httpRequestCount": 1,
+          "retryEventCount": 0,
+          "requestRoutes": [
+            {
+              "path": "/v1/responses",
+              "model": "chatgpt-web/gpt-5.6-sol-instant"
+            }
+          ],
+          "errorMessage": "ChatGPT Web needs manual recovery (multipart_stage_5_acknowledgement). The request may already have been submitted. Inspect the ChatGPT tab before continuing; automatic replay is disabled. Details: /chatgpt-web-status."
+        },
+        {
+          "case": "submitted",
+          "pass": true,
+          "httpRequestCount": 1,
+          "retryEventCount": 0,
+          "requestRoutes": [
+            {
+              "path": "/v1/responses",
+              "model": "chatgpt-web/gpt-5.6-sol-instant"
+            }
+          ],
+          "errorMessage": "ChatGPT Web needs manual recovery (chatgpt_submitted_turn_failed). The request may already have been submitted. Inspect the ChatGPT tab before continuing; automatic replay is disabled. Details: /chatgpt-web-status."
+        },
+        {
+          "case": "truncated",
+          "pass": true,
+          "httpRequestCount": 1,
+          "retryEventCount": 0,
+          "requestRoutes": [
+            {
+              "path": "/v1/responses",
+              "model": "chatgpt-web/gpt-5.6-sol-instant"
+            }
+          ],
+          "errorMessage": "ChatGPT Web needs manual recovery (incomplete_browser_response). The request may already have been submitted. Inspect the ChatGPT tab before continuing; automatic replay is disabled. Details: /chatgpt-web-status."
+        }
+      ],
+      "at": 1791020616.638604,
+      "transport": "local injected HTTP 502 and truncated SSE; actual Pi CLI with retry enabled"
+    }
+  },
+  "scopeNotes": [
+    "Live model paths exercised Sol Medium. Retry failure cases used actual Pi CLI and a local HTTP/SSE fixture, not a forced upstream failure.",
+    "Bridge multipart acknowledgement checkpoints 1 through 5 and turn completion were observed during manual and auto acceptance.",
+    "No claim that the adapter eliminates ChatGPT upstream stalls; known ambiguous/post-submission failures stop automatic replay and expose original process-local diagnostics."
+  ],
+  "fileSha256": {
+    "extensions/chatgpt-web.js": "daffc2269be148dc9d6d7b0752e82b0d172edd5ee9269674cc59d4d34d9610b7",
+    "extensions/bridge-stream.js": "a56fa2d4e6d666f8cc769810ef93dc56e67f8ac16132e58234c5a3c8d3f5bee0"
+  }
+}

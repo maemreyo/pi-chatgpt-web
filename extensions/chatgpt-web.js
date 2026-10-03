@@ -1,5 +1,6 @@
 import { openAIResponsesApi } from "@earendil-works/pi-ai/compat";
 import { Type } from "typebox";
+import { wrapBridgeStream } from "./bridge-stream.js";
 
 const PROVIDER_ID = "chatgpt-web";
 const BASH_TOOL_NAME = "bash";
@@ -106,7 +107,7 @@ function shellQuote(value) {
 
 export function shellCommandToBashArgs({ command, workdir, timeout_ms: timeoutMs }) {
   const bashArgs = {
-    command: workdir ? `cd -- ${shellQuote(workdir)} && ${command}` : command,
+    command: workdir ? `cd -- ${shellQuote(workdir)} || exit $?\n${command}` : command,
   };
   if (timeoutMs !== undefined) bashArgs.timeout = timeoutMs / 1000;
   return bashArgs;
@@ -329,6 +330,7 @@ export function createChatGptWebExtension({ responsesApi = openAIResponsesApi() 
     let activeTurn = null;
     let currentCwd = process.cwd();
     let shellCommandRegistered = false;
+    let lastBridgeFailure = null;
     const summaryPlans = new WeakMap();
     const directIdentities = new Map();
 
@@ -422,8 +424,10 @@ export function createChatGptWebExtension({ responsesApi = openAIResponsesApi() 
       }
 
       const originalOnPayload = options.onPayload;
-      return responsesApi.streamSimple(model, context, {
+      let expectedSummaryPrompt;
+      const source = responsesApi.streamSimple(model, context, {
         ...options,
+        maxRetries: 0,
         onPayload: async (payload) => {
           let nextPayload = typeof originalOnPayload === "function"
             ? (await originalOnPayload(payload)) ?? payload
@@ -431,6 +435,13 @@ export function createChatGptWebExtension({ responsesApi = openAIResponsesApi() 
           nextPayload = guardShellCommandTools(nextPayload);
           const bridgeModel = bridgeModelId(model.id);
           if (summaryKind) {
+            const user = Array.isArray(nextPayload.input)
+              ? nextPayload.input.findLast((item) => item?.role === "user")
+              : undefined;
+            expectedSummaryPrompt = typeof user?.content === "string" ? user.content
+              : Array.isArray(user?.content) ? user.content
+                .filter((part) => part?.type === "input_text" || part?.type === "text")
+                .map((part) => part.text).join("\n") : undefined;
             const decorated = decorateSummaryPayload(nextPayload, {
               turnId: identity.turnId,
               threadId: identity.threadId,
@@ -454,13 +465,23 @@ export function createChatGptWebExtension({ responsesApi = openAIResponsesApi() 
           return decorated;
         },
       });
+      return wrapBridgeStream(source, {
+        model,
+        summary: Boolean(summaryKind),
+        expectedPrompt: () => expectedSummaryPrompt,
+        signal: options.signal,
+        onFailure: (failure) => { lastBridgeFailure = failure; },
+      });
     };
 
     pi.registerCommand("chatgpt-web-status", {
       description: "Check ChatGPT Web bridge health and readiness",
       handler: async (_args, ctx) => {
         const status = await checkBridgeStatus(baseUrl);
-        ctx.ui.notify(formatBridgeStatus(status), status.healthy && status.acceptingTurns ? "info" : "error");
+        const failure = lastBridgeFailure
+          ? `\nLast provider failure (${lastBridgeFailure.at}): ${lastBridgeFailure.message}${lastBridgeFailure.code ? "\nInspect the ChatGPT tab before continuing; automatic replay was disabled." : ""}`
+          : "";
+        ctx.ui.notify(formatBridgeStatus(status) + failure, status.healthy && status.acceptingTurns ? "info" : "error");
       },
     });
 

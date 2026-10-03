@@ -1,5 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import chatGptWebExtension, {
   createShellCommandTool,
   executeShellCommand,
@@ -18,8 +22,32 @@ test("shellCommandToBashArgs maps command and timeout milliseconds to Pi bash se
 test("shellCommandToBashArgs maps workdir without bypassing Pi bash", () => {
   assert.deepEqual(
     shellCommandToBashArgs({ command: "pwd", workdir: "/tmp/a b/it's-here" }),
-    { command: "cd -- '/tmp/a b/it'\"'\"'s-here' && pwd" },
+    { command: "cd -- '/tmp/a b/it'\"'\"'s-here' || exit $?\npwd" },
   );
+});
+
+test("a failed workdir stops semicolon, multiline, and asynchronous command lists", () => {
+  const root = mkdtempSync(join(tmpdir(), "pi-web-workdir-"));
+  try {
+    for (const command of ["printf FIRST; printf SHOULD_NOT_RUN", "printf FIRST\nprintf SHOULD_NOT_RUN", "printf FIRST & printf SHOULD_NOT_RUN"]) {
+      const args = shellCommandToBashArgs({ command, workdir: join(root, "missing") });
+      const result = spawnSync("/bin/bash", ["-c", args.command], { cwd: root, encoding: "utf8" });
+      assert.notEqual(result.status, 0);
+      assert.equal(result.stdout, "");
+    }
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test("valid quoted workdirs preserve multiline scripts and command exit codes", () => {
+  const root = mkdtempSync(join(tmpdir(), "pi-web-it's here-"));
+  try {
+    const command = "pwd\nprintf '%s\\n' second\nexit 7";
+    const args = shellCommandToBashArgs({ command, workdir: root });
+    const result = spawnSync("/bin/bash", ["-c", args.command], { encoding: "utf8" });
+    assert.equal(result.status, 7);
+    assert.ok(result.stdout.endsWith("\nsecond\n"));
+    assert.ok(result.stdout.includes(root.split("/").at(-1)));
+  } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
 test("executeShellCommand delegates through ctx.executeTool and preserves successful result", async () => {
