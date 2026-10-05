@@ -1,6 +1,15 @@
 import { createHash } from "node:crypto";
 import { openAIResponsesApi } from "@earendil-works/pi-ai/compat";
 import { Type } from "typebox";
+import {
+  BUDGET_REFRESH_TIMEOUT_MS,
+  applyPiCompactionSettings,
+  withBudgetTimeout,
+  createFallbackBudgetState,
+  formatContextBudgetStatus,
+  normalizeBridgeEffort,
+  resolveBridgeContextBudgets,
+} from "./context-budget.js";
 import { wrapBridgeStream } from "./bridge-stream.js";
 
 const PROVIDER_ID = "chatgpt-web";
@@ -343,7 +352,11 @@ export function decorateSummaryPayload(payload, {
   };
 }
 
-export function createChatGptWebExtension({ responsesApi = openAIResponsesApi() } = {}) {
+export function createChatGptWebExtension({
+  responsesApi = openAIResponsesApi(),
+  statusChecker = checkBridgeStatus,
+  budgetResolver = resolveBridgeContextBudgets,
+} = {}) {
   return function chatGptWebExtension(pi) {
     const baseUrl = process.env.PI_CHATGPT_WEB_BASE_URL || DEFAULT_BASE_URL;
     const localBearer = process.env.PI_CHATGPT_WEB_API_KEY || "pi-chatgpt-web-local";
@@ -353,6 +366,8 @@ export function createChatGptWebExtension({ responsesApi = openAIResponsesApi() 
     let currentCwd = process.cwd();
     let shellCommandRegistered = false;
     let lastBridgeFailure = null;
+    let contextBudgetState = createFallbackBudgetState({ baseUrl, effort: "medium" });
+    let budgetRefreshChain = Promise.resolve(contextBudgetState);
     const summaryPlans = new WeakMap();
     const directIdentities = new Map();
 
@@ -420,6 +435,11 @@ export function createChatGptWebExtension({ responsesApi = openAIResponsesApi() 
     };
 
     const streamSimple = (model, context, options = {}) => {
+      const currentBudget = contextBudgetState.models[model.id];
+      if (Number.isFinite(model.contextWindow) && currentBudget
+        && model.contextWindow > currentBudget.piContextWindow) {
+        throw new Error("ChatGPT Web active model budget is stale; refresh /chatgpt-web-status before sending.");
+      }
       const summaryKind = summaryKindFor(options);
       const normalAgentRequest = !summaryKind
         && activeSessionId !== null
@@ -504,62 +524,208 @@ export function createChatGptWebExtension({ responsesApi = openAIResponsesApi() 
       });
     };
 
+    const modelConfigsForBudget = (state) => [
+      {
+        id: "gpt-5.6-sol-instant",
+        name: "GPT-5.6 Sol Instant (Web)",
+        api: "openai-responses",
+        reasoning: false,
+        input: ["text", "image"],
+        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+        contextWindow: state.models["gpt-5.6-sol-instant"].piContextWindow,
+        maxTokens: 8192,
+      },
+      {
+        id: "gpt-5.6-sol",
+        name: "GPT-5.6 Sol (Web)",
+        api: "openai-responses",
+        reasoning: true,
+        input: ["text", "image"],
+        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+        contextWindow: state.models["gpt-5.6-sol"].piContextWindow,
+        maxTokens: 16384,
+      },
+    ];
+
+    const registerBudgetedProvider = (state) => {
+      pi.registerProvider(PROVIDER_ID, {
+        name: "ChatGPT Web",
+        baseUrl,
+        apiKey: localBearer,
+        api: "openai-responses",
+        authHeader: true,
+        streamSimple,
+        models: modelConfigsForBudget(state),
+      });
+    };
+
+    const budgetFingerprint = (state) => JSON.stringify({
+      verified: state.verified,
+      source: state.source,
+      effort: state.effort,
+      instant: state.models["gpt-5.6-sol-instant"],
+      sol: state.models["gpt-5.6-sol"],
+    });
+
+    const requestedEffort = (explicitLevel) => {
+      const explicit = normalizeBridgeEffort(explicitLevel);
+      if (explicit) return explicit;
+      const selected = normalizeBridgeEffort(pi.getThinkingLevel?.());
+      return selected || "medium";
+    };
+
+    let rebindingModel = false;
+    const applyContextBudgetState = async (nextState, ctx) => {
+      const changed = budgetFingerprint(nextState) !== budgetFingerprint(contextBudgetState);
+      contextBudgetState = nextState;
+      if (changed) registerBudgetedProvider(nextState);
+
+      if (
+        ctx?.model?.provider !== PROVIDER_ID
+        || !ctx.modelRegistry?.find
+        || typeof pi.setModel !== "function"
+      ) return;
+
+      const freshModel = ctx.modelRegistry.find(PROVIDER_ID, ctx.model.id);
+      if (!freshModel) return;
+      const needsRebind = freshModel !== ctx.model
+        || freshModel.contextWindow !== ctx.model.contextWindow;
+      if (!needsRebind) return;
+
+      const shrinking = Number.isFinite(ctx.model.contextWindow)
+        && Number.isFinite(freshModel.contextWindow)
+        && freshModel.contextWindow < ctx.model.contextWindow;
+      const selectedThinking = pi.getThinkingLevel?.();
+      rebindingModel = true;
+      try {
+        const selected = await pi.setModel(freshModel);
+        if (selected !== false && freshModel.reasoning && selectedThinking
+          && pi.getThinkingLevel?.() !== selectedThinking) {
+          pi.setThinkingLevel?.(selectedThinking);
+        }
+        if (selected === false && shrinking) {
+          throw new Error(
+            `Could not safely shrink active ${PROVIDER_ID}/${ctx.model.id} context from ${ctx.model.contextWindow} to ${freshModel.contextWindow}`,
+          );
+        }
+      } finally {
+        rebindingModel = false;
+      }
+    };
+
+    const refreshContextBudget = (ctx, explicitLevel) => {
+      const effort = requestedEffort(explicitLevel);
+      const previous = budgetRefreshChain.catch(() => contextBudgetState);
+      budgetRefreshChain = previous.then(async () => {
+        let status;
+        try {
+          status = await withBudgetTimeout(() => statusChecker(baseUrl, { timeoutMs: BUDGET_REFRESH_TIMEOUT_MS }));
+        } catch (error) {
+          status = {
+            endpoint: normalizeBaseUrl(baseUrl),
+            reachable: false,
+            healthy: false,
+            httpStatus: null,
+            mode: null,
+            version: null,
+            acceptingTurns: false,
+            error: error?.message || String(error),
+          };
+        }
+
+        let nextState;
+        try {
+          nextState = await withBudgetTimeout(() => budgetResolver({ baseUrl, healthStatus: status, effort }));
+          if (
+            !nextState?.models?.["gpt-5.6-sol-instant"]
+            || !nextState?.models?.["gpt-5.6-sol"]
+          ) {
+            throw new Error("budget resolver returned incomplete model metadata");
+          }
+        } catch (error) {
+          nextState = createFallbackBudgetState({
+            baseUrl,
+            effort,
+            healthStatus: status,
+            reason: `context budget resolution failed: ${error?.message || String(error)}`,
+          });
+        }
+
+        let settings;
+        let settingsReason = null;
+        try {
+          if (typeof pi.getSettings !== "function") throw new Error("public Pi getSettings API unavailable");
+          settings = pi.getSettings();
+        } catch {
+          settingsReason = "effective Pi settings unavailable via public API";
+        }
+        nextState = applyPiCompactionSettings(nextState, settings, settingsReason);
+        await applyContextBudgetState(nextState, ctx);
+        return contextBudgetState;
+      });
+      return budgetRefreshChain;
+    };
+
+    registerBudgetedProvider(contextBudgetState);
+
     pi.registerCommand("chatgpt-web-status", {
-      description: "Check ChatGPT Web bridge health and readiness",
+      description: "Check ChatGPT Web bridge health, readiness, and context budget",
       handler: async (_args, ctx) => {
-        const status = await checkBridgeStatus(baseUrl);
+        const budgetState = await refreshContextBudget(ctx);
+        const status = budgetState.healthStatus || {
+          endpoint: normalizeBaseUrl(baseUrl),
+          reachable: false,
+          healthy: false,
+          httpStatus: null,
+          mode: null,
+          version: null,
+          acceptingTurns: false,
+          error: "health status unavailable",
+        };
+        const modelId = ctx.model?.provider === PROVIDER_ID
+          ? ctx.model.id
+          : "gpt-5.6-sol";
         const failure = lastBridgeFailure
           ? `\nLast provider failure (${lastBridgeFailure.at}): ${lastBridgeFailure.message}${lastBridgeFailure.code ? "\nInspect the ChatGPT tab before continuing; automatic replay was disabled." : ""}`
           : "";
-        ctx.ui.notify(formatBridgeStatus(status) + failure, status.healthy && status.acceptingTurns ? "info" : "error");
+        const message = `${formatBridgeStatus(status)}\n${formatContextBudgetStatus(budgetState, { modelId })}${failure}`;
+        ctx.ui.notify(message, status.healthy && status.acceptingTurns ? "info" : "error");
       },
     });
 
-    pi.registerProvider(PROVIDER_ID, {
-      name: "ChatGPT Web",
-      baseUrl,
-      apiKey: localBearer,
-      api: "openai-responses",
-      authHeader: true,
-      streamSimple,
-      models: [
-        {
-          id: "gpt-5.6-sol-instant",
-          name: "GPT-5.6 Sol Instant (Web)",
-          api: "openai-responses",
-          reasoning: false,
-          input: ["text", "image"],
-          cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-          contextWindow: 41000,
-          maxTokens: 8192
-        },
-        {
-          id: "gpt-5.6-sol",
-          name: "GPT-5.6 Sol (Web)",
-          api: "openai-responses",
-          reasoning: true,
-          input: ["text", "image"],
-          cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-          contextWindow: 90000,
-          maxTokens: 16384
-        }
-      ]
-    });
-
-    pi.on("session_start", (_event, ctx) => {
+    pi.on("session_start", async (_event, ctx) => {
       fallbackThreadId = nativeId();
       activeSessionId = ctx.sessionManager?.getSessionId?.() ?? null;
       activeTurn = null;
       currentCwd = ctx.cwd || process.cwd();
       directIdentities.clear();
+      await refreshContextBudget(ctx);
       syncShellCommandActivation(ctx);
     });
 
-    pi.on("before_agent_start", (_event, ctx) => {
+    pi.on("input", async (event, ctx) => {
+      if (event.source === "extension" || ctx.model?.provider !== PROVIDER_ID
+        || typeof ctx.isIdle !== "function" || !ctx.isIdle()) return { action: "continue" };
+      await refreshContextBudget(ctx);
+      return { action: "continue" };
+    });
+
+    pi.on("before_agent_start", async (_event, ctx) => {
       activeSessionId = ctx.sessionManager?.getSessionId?.() ?? activeSessionId;
       currentCwd = ctx.cwd || currentCwd;
+      await refreshContextBudget(ctx);
       syncShellCommandActivation(ctx);
       activeTurn = createTurnState();
+    });
+
+    pi.on("thinking_level_select", async (event, ctx) => {
+      if (rebindingModel || ctx.model?.provider !== PROVIDER_ID) return;
+      await refreshContextBudget(ctx, event.level);
+    });
+
+    pi.on("model_select", async (event, ctx) => {
+      if (rebindingModel || event.model?.provider !== PROVIDER_ID) return;
+      await refreshContextBudget(ctx);
     });
 
     pi.on("agent_end", () => {

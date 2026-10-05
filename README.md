@@ -17,7 +17,7 @@ Current target:
 - Full multi-round tool loop tested: ChatGPT Web → Responses tool call → Pi local tool execution → tool result → ChatGPT Web continuation
 - Manual and threshold auto-compaction tested through ChatGPT Web, including multipart staging and post-compaction continuation
 
-> **Version note:** `v0.1.0` targeted the older `@mariozechner/pi-coding-agent` package and is deprecated. Use `v0.2.4` or newer for `earendil-works/pi`.
+> **Version note:** `v0.1.0` targeted the older `@mariozechner/pi-coding-agent` package and is deprecated. Use `v0.2.5` or newer for `earendil-works/pi`.
 
 ## How it works
 
@@ -86,7 +86,7 @@ For Pi to use local tools through a ChatGPT Web turn, configure the **Full harne
 From the tagged GitHub release:
 
 ```bash
-pi install git:github.com/maemreyo/pi-chatgpt-web@v0.2.4
+pi install git:github.com/maemreyo/pi-chatgpt-web@v0.2.5
 ```
 
 Or track the repository default branch:
@@ -134,6 +134,10 @@ Inside Pi, run:
 ```
 
 From v0.2.3, it also shows the last provider failure observed in the current Pi process. The command checks the bridge's unauthenticated `/healthz` endpoint derived from `PI_CHATGPT_WEB_BASE_URL` (or the default `http://127.0.0.1:17841/v1`). It reports whether the expected `codex-chatgpt-web` service is healthy and accepting turns, plus the bridge version and mode when available. It intentionally does not use `/v1/models`: that route is a native Codex passthrough and requires upstream ChatGPT Bearer authentication that this Pi extension does not own.
+
+From v0.2.5, the same command also reports context-budget provenance and keeps three values separate: the bridge's raw context window, the smaller context window advertised to Pi, and the effective safe compaction threshold. For a ChatGPT Plus, non-Pro Sol Medium/High route on `codex-chatgpt-web` 6.1.4 with `experimentalBiggerContext=true`, those values are `270000`, `256384`, and `240000` tokens respectively. The `256384` Pi window is deliberate: with Pi's default `16384` reserve it makes Pi compact at `240000`, no later than the bridge's auto-compact boundary. A stricter user compaction policy is never relaxed by this extension. The extension reads the effective policy through public pi.getSettings(), including per-model overrides. A reserve below 16384 reduces the advertised window to retain the bridge boundary; a larger reserve keeps earlier compaction (reserve 40000 gives threshold 216384). Disabled automatic compaction remains disabled. Status reports the effective reserve/threshold or explicitly marks an unavailable policy, in which case the window is capped conservatively. Idle input refresh runs before Pi checks pre-turn compaction. No Pi settings are written.
+
+`codex-chatgpt-web` 6.1.4 does not expose a dedicated unauthenticated budget-metadata endpoint. For the exact default loopback endpoint only, v0.2.5 therefore combines validated `/healthz` version/mode metadata with a bounded, version-matched snapshot of `~/.codex-chatgpt-web/config.json`. It accepts only the expected schema/release/host/port/mode and the four capability booleans needed for budget derivation (`solAvailable`, `proAvailable`, `extraHighAvailable`, `experimentalBiggerContext`). A custom or remote `PI_CHATGPT_WEB_BASE_URL` never inherits this local-default config; if authoritative metadata cannot be verified, the extension fails closed to the conservative pre-v0.2.5 windows.
 
 ## Tool use
 
@@ -196,18 +200,21 @@ Pi already supports the OpenAI Responses wire protocol. Current `codex-chatgpt-w
 - creates UUID-format thread and turn identities;
 - keeps user/environment item IDs stable across all provider rounds of one Pi agent turn;
 - attaches the current Pi working directory as trusted environment metadata for Full-mode tool rounds;
-- preserves the same turn identity when Pi sends tool results back to the bridge.
+- preserves the same turn identity when Pi sends tool results back to the bridge;
+- derives conservative Pi context-window metadata from verified bridge capabilities and refreshes the active model object when effort or Bigger Context changes, without writing Pi compaction settings.
 
 Stable item IDs are important. Regenerating the current user message ID on a tool-result continuation causes `codex-chatgpt-web` to reject the earlier browser response as superseded.
 
 ## Security and privacy
 
-The extension does **not** read, copy, or store:
+The extension does **not** use, copy, or persist:
 
 - ChatGPT cookies;
 - ChatGPT browser profile data;
 - OpenAI API keys;
 - `codex-chatgpt-web` tunnel runtime credentials.
+
+For v0.2.5 context-budget derivation, and only when using the exact default loopback bridge, the extension reads a bounded local `~/.codex-chatgpt-web/config.json` snapshot and uses only schema/release/endpoint/mode provenance plus the four capability booleans listed above. It does not log or forward the file contents, and it never applies that local snapshot to a custom or remote bridge URL.
 
 It does send the current Pi working-directory path and Pi's active tool schemas to the local bridge because Full-mode tool routing requires that environment and tool context.
 
