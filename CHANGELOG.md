@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.5 - 2026-10-05
+
+- Add a bridge-aware context-budget resolver for `codex-chatgpt-web` 6.1.4. Keep raw bridge context, Pi-advertised usable context, and the safe compaction threshold distinct instead of blindly advertising Bigger Context's raw window.
+- For ChatGPT Plus Sol Medium/High with Bigger Context enabled, derive `270000` raw / `256384` Pi usable / `240000` safe-threshold tokens so Pi's default `16384` reserve compacts no later than the bridge. Low/Instant and supported Pro variants use their own 6.1.4 bounds.
+- Refresh provider/model metadata on session start, idle input before pre-turn compaction, before agent turns, thinking-level changes, model selection, and status checks. Rebind the active Pi model through public APIs so a disabled experiment or lower effort cannot leave a stale larger model object active.
+- Fail closed when health/config provenance is missing, malformed, version-mismatched, unsupported, or remote/custom. The exact default loopback bridge may use only a bounded, whitelisted, version-matched local config snapshot; custom/remote bridge URLs never inherit local-default capabilities.
+- Extend `/chatgpt-web-status` with budget provenance, raw bridge window, Pi usable window, bridge auto-compact limit, and effective safe compaction threshold. Read effective global/project/model compaction policy through public pi.getSettings(); account for smaller reserves, preserve stricter reserves and disabled auto-compaction, and never write Pi settings. Bound metadata refresh and explain fallback causes.
+- Add deterministic mocked regression coverage for Plus x3/base budgets, Low/Instant/Pro variants, local provenance checks, remote isolation, malformed metadata, status formatting, and active-model shrink/refresh behavior.
+
 ## 0.2.4 - 2026-10-03
 
 - Prevent Pi from replaying ambiguous generic 502/504, rate-limit and transport failures; retain original diagnostics and explicit connection-refused retry behavior. Caller abort takes precedence over transport errors.
