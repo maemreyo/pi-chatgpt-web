@@ -416,4 +416,9 @@ test("stalled metadata resolution times out to a conservative selected model", a
   fake.ctx.ui.notify = (text) => { message = text; };
   await fake.commands.get("chatgpt-web-status").handler("", fake.ctx);
   assert.match(message, /budget metadata timed out/);
+  assert.match(message, /Provider\/runtime observations:/);
+  assert.match(message, /Provider registration: REGISTERED/);
+  assert.match(message, /Model\/effort eligibility: UNKNOWN/);
+  assert.match(message, /Authentication: UNKNOWN/);
+  assert.match(message, /Pi tools: registered=/);
 });

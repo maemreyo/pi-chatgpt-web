@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { openAIResponsesApi } from "@earendil-works/pi-ai/compat";
 import { Type } from "typebox";
 import {
@@ -10,7 +11,7 @@ import {
   normalizeBridgeEffort,
   resolveBridgeContextBudgets,
 } from "./context-budget.js";
-import { wrapBridgeStream } from "./bridge-stream.js";
+import { formatFailureObservation, wrapBridgeStream } from "./bridge-stream.js";
 
 const PROVIDER_ID = "chatgpt-web";
 const BASH_TOOL_NAME = "bash";
@@ -20,6 +21,83 @@ const STATUS_TIMEOUT_MS = 2500;
 const MAX_DIRECT_IDENTITIES = 64;
 const SUMMARY_PROTOCOL = Object.freeze({ implementation: "responses", strategy: "memento" });
 const SUMMARY_KINDS = new Set(["compaction-summary", "turn-prefix-summary", "branch-summary"]);
+
+function readPackageMetadata() {
+  try {
+    const manifest = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+    return {
+      name: typeof manifest?.name === "string" ? manifest.name : "UNKNOWN",
+      version: typeof manifest?.version === "string" ? manifest.version : "UNKNOWN",
+    };
+  } catch {
+    return { name: "UNKNOWN", version: "UNKNOWN" };
+  }
+}
+
+const PACKAGE_METADATA = Object.freeze(readPackageMetadata());
+export const PACKAGE_VERSION = PACKAGE_METADATA.version;
+
+function observedAuthStatus(lastFailure) {
+  const text = lastFailure?.message || "";
+  if (/\b401\b|sign[- ]?in|required authentication|unauthori[sz]ed|authentication failed/i.test(text)) {
+    return `FAILURE_OBSERVED${lastFailure?.at ? ` (${lastFailure.at})` : ""}`;
+  }
+  return "UNKNOWN (no upstream authentication status was observed)";
+}
+
+function observedToolStatus(pi, name) {
+  try {
+    const registered = pi.getAllTools?.();
+    const active = pi.getActiveTools?.();
+    if (!Array.isArray(registered) || !Array.isArray(active)) return "UNKNOWN";
+    if (!registered.some((tool) => tool?.name === name)) return "UNREGISTERED";
+    return active.includes(name) ? "ACTIVE" : "INACTIVE";
+  } catch {
+    return "UNKNOWN";
+  }
+}
+
+export function formatProviderRuntimeStatus({
+  pi,
+  ctx,
+  budgetState,
+  providerRegistered = false,
+  lastFailure = null,
+} = {}) {
+  const modelId = ctx?.model?.id || "UNKNOWN";
+  const selectedProvider = ctx?.model?.provider || "UNKNOWN";
+  let effort = "UNKNOWN";
+  try {
+    effort = pi?.getThinkingLevel?.() || "UNKNOWN";
+  } catch {
+    effort = "UNKNOWN";
+  }
+  const budget = budgetState?.models?.[modelId];
+  let eligibility = "UNKNOWN";
+  if (budget?.availability === "unsupported") eligibility = "UNSUPPORTED";
+  else if (budget?.availability === "available" && budgetState?.verified === true) eligibility = "AVAILABLE";
+  const eligibilitySource = budgetState?.source || "UNKNOWN";
+  let toolCounts = "registered=UNKNOWN, active=UNKNOWN";
+  try {
+    const registered = pi?.getAllTools?.();
+    const active = pi?.getActiveTools?.();
+    if (Array.isArray(registered) && Array.isArray(active)) {
+      toolCounts = `registered=${registered.length}, active=${active.length}`;
+    }
+  } catch {
+    // Keep UNKNOWN counts.
+  }
+  return [
+    "Provider/runtime observations:",
+    `Package: ${PACKAGE_METADATA.name} ${PACKAGE_METADATA.version} (loaded package metadata)`,
+    `Provider registration: ${providerRegistered ? "REGISTERED" : "UNKNOWN"}`,
+    `Selected provider: ${selectedProvider}`,
+    `Selected model/effort: ${modelId} / ${effort}`,
+    `Model/effort eligibility: ${eligibility} (source: ${eligibilitySource})`,
+    `Authentication: ${observedAuthStatus(lastFailure)}`,
+    `Pi tools: ${toolCounts}; bash=${observedToolStatus(pi, BASH_TOOL_NAME)}; read=${observedToolStatus(pi, "read")}; write=${observedToolStatus(pi, "write")}; edit=${observedToolStatus(pi, "edit")}; shell_command=${observedToolStatus(pi, SHELL_COMMAND_TOOL_NAME)}`,
+  ].join("\n");
+}
 
 const SHELL_COMMAND_PARAMETERS = Type.Object({
   command: Type.String({
@@ -108,7 +186,7 @@ export function formatBridgeStatus(status) {
     status.httpStatus ? `HTTP ${status.httpStatus}` : null,
   ].filter(Boolean).join(", ");
 
-  return `ChatGPT Web bridge: ${state}${details ? ` (${details})` : ""}\nEndpoint: ${status.endpoint}\nAccepting turns: ${status.acceptingTurns ? "yes" : "no"}`;
+  return `ChatGPT Web bridge: ${state}${details ? ` (${details})` : ""}\nEndpoint: ${status.endpoint}\nAccepting turns: ${status.acceptingTurns ? "yes" : "no"}\nHealth scope: local bridge process/readiness only; this does not establish long-task upstream reliability or failed-turn completion.`;
 }
 
 function shellQuote(value) {
@@ -365,6 +443,7 @@ export function createChatGptWebExtension({
     let activeTurn = null;
     let currentCwd = process.cwd();
     let shellCommandRegistered = false;
+    let providerRegistered = false;
     let lastBridgeFailure = null;
     let contextBudgetState = createFallbackBudgetState({ baseUrl, effort: "medium" });
     let budgetRefreshChain = Promise.resolve(contextBudgetState);
@@ -520,6 +599,12 @@ export function createChatGptWebExtension({
         summary: Boolean(summaryKind),
         expectedPrompt: () => expectedSummaryPrompt,
         signal: options.signal,
+        diagnosticContext: {
+          requestKind,
+          correlationTurnId: identity.turnId,
+          correlationThreadId: identity.threadId,
+          correlationProvenance: "pi-provider-generated request metadata",
+        },
         onFailure: (failure) => { lastBridgeFailure = failure; },
       });
     };
@@ -557,6 +642,7 @@ export function createChatGptWebExtension({
         streamSimple,
         models: modelConfigsForBudget(state),
       });
+      providerRegistered = true;
     };
 
     const budgetFingerprint = (state) => JSON.stringify({
@@ -685,10 +771,17 @@ export function createChatGptWebExtension({
         const modelId = ctx.model?.provider === PROVIDER_ID
           ? ctx.model.id
           : "gpt-5.6-sol";
+        const runtime = formatProviderRuntimeStatus({
+          pi,
+          ctx,
+          budgetState,
+          providerRegistered,
+          lastFailure: lastBridgeFailure,
+        });
         const failure = lastBridgeFailure
-          ? `\nLast provider failure (${lastBridgeFailure.at}): ${lastBridgeFailure.message}${lastBridgeFailure.code ? "\nInspect the ChatGPT tab before continuing; automatic replay was disabled." : ""}`
+          ? `\n${formatFailureObservation(lastBridgeFailure)}`
           : "";
-        const message = `${formatBridgeStatus(status)}\n${formatContextBudgetStatus(budgetState, { modelId })}${failure}`;
+        const message = `${formatBridgeStatus(status)}\n${runtime}\n${formatContextBudgetStatus(budgetState, { modelId })}${failure}`;
         ctx.ui.notify(message, status.healthy && status.acceptingTurns ? "info" : "error");
       },
     });

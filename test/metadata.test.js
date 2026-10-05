@@ -1,6 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { bridgeModelId, checkBridgeStatus, decoratePayload, formatBridgeStatus } from "../extensions/chatgpt-web.js";
+import {
+  PACKAGE_VERSION,
+  bridgeModelId,
+  checkBridgeStatus,
+  decoratePayload,
+  formatBridgeStatus,
+  formatProviderRuntimeStatus,
+} from "../extensions/chatgpt-web.js";
 
 test("user IDs persist when current instructions become history, across tool rounds and resume", async () => {
   const { preserveUserHistoryIds } = await import("../extensions/chatgpt-web.js");
@@ -24,6 +31,39 @@ test("user IDs persist when current instructions become history, across tool rou
 test("bridgeModelId prefixes public Pi model IDs", () => {
   assert.equal(bridgeModelId("gpt-5.6-sol"), "chatgpt-web/gpt-5.6-sol");
   assert.equal(bridgeModelId("chatgpt-web/gpt-5.6-sol"), "chatgpt-web/gpt-5.6-sol");
+});
+
+test("provider runtime status reports only observed package/provider/eligibility/auth/tool facts", () => {
+  assert.equal(PACKAGE_VERSION, "0.2.6");
+  const pi = {
+    getThinkingLevel: () => "high",
+    getAllTools: () => [{ name: "bash" }, { name: "shell_command" }, { name: "read" }],
+    getActiveTools: () => ["bash", "read"],
+  };
+  const ctx = { model: { provider: "chatgpt-web", id: "gpt-5.6-sol" } };
+  const budgetState = {
+    verified: true,
+    source: "verified-test-capability-snapshot",
+    models: { "gpt-5.6-sol": { availability: "available" } },
+  };
+  const status = formatProviderRuntimeStatus({ pi, ctx, budgetState, providerRegistered: true });
+  assert.match(status, /Package: pi-chatgpt-web 0\.2\.6 \(loaded package metadata\)/);
+  assert.match(status, /Provider registration: REGISTERED/);
+  assert.match(status, /Selected provider: chatgpt-web/);
+  assert.match(status, /Selected model\/effort: gpt-5\.6-sol \/ high/);
+  assert.match(status, /Model\/effort eligibility: AVAILABLE \(source: verified-test-capability-snapshot\)/);
+  assert.match(status, /Authentication: UNKNOWN/);
+  assert.match(status, /bash=ACTIVE; read=ACTIVE; write=UNREGISTERED; edit=UNREGISTERED; shell_command=INACTIVE/);
+
+  const failedAuth = formatProviderRuntimeStatus({
+    pi,
+    ctx,
+    budgetState: { ...budgetState, verified: false, source: "fallback" },
+    providerRegistered: true,
+    lastFailure: { at: "2026-10-05T06:00:00.000Z", message: "401 ChatGPT sign-in required" },
+  });
+  assert.match(failedAuth, /Model\/effort eligibility: UNKNOWN \(source: fallback\)/);
+  assert.match(failedAuth, /Authentication: FAILURE_OBSERVED \(2026-10-05T06:00:00\.000Z\)/);
 });
 
 test("decoratePayload adds Codex turn metadata to the current user message", () => {
@@ -88,6 +128,8 @@ test("checkBridgeStatus uses the bridge health endpoint and reports readiness", 
   assert.match(formatBridgeStatus(status), /version 6\.1\.4/);
   assert.match(formatBridgeStatus(status), /mode full/);
   assert.match(formatBridgeStatus(status), /Accepting turns: yes/);
+  assert.match(formatBridgeStatus(status), /local bridge process\/readiness only/);
+  assert.match(formatBridgeStatus(status), /does not establish long-task upstream reliability/);
 });
 
 test("checkBridgeStatus rejects an unexpected service on the configured port", async () => {

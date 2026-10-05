@@ -1,7 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createAssistantMessageEventStream, isRetryableAssistantError, AssistantMessageFrameEncoder, reduceAssistantMessageFrames } from "@earendil-works/pi-ai/compat";
-import { stripCompactionAppendix, cleanSummaryMessage, wrapBridgeStream } from "../extensions/bridge-stream.js";
+import {
+  cleanSummaryMessage,
+  createFailureObservation,
+  formatFailureObservation,
+  manualRecoveryCode,
+  stripCompactionAppendix,
+  wrapBridgeStream,
+} from "../extensions/bridge-stream.js";
 
 const MODEL = { api: "openai-responses", provider: "chatgpt-web", id: "gpt-5.6-sol" };
 function message(text, extra = {}) {
@@ -29,6 +36,78 @@ function sourceFor(result, split = 1) {
   });
   return source;
 }
+
+test("failure observations separate explicit submission evidence from local correlation and SDK stream start", () => {
+  const submittedMessage = message("", {
+    stopReason: "error",
+    errorMessage: "chatgpt_submitted_turn_failed: ChatGPT stopped responding after the task started",
+  });
+  const submitted = createFailureObservation(submittedMessage, {
+    code: manualRecoveryCode(submittedMessage),
+    diagnosticContext: {
+      requestKind: "ordinary-turn",
+      correlationTurnId: "turn-local",
+      correlationThreadId: "thread-local",
+      correlationProvenance: "pi-provider-generated request metadata",
+    },
+    at: "2026-10-05T05:00:00.000Z",
+  });
+  assert.deepEqual(submitted, {
+    at: "2026-10-05T05:00:00.000Z",
+    classification: "submitted",
+    code: "chatgpt_submitted_turn_failed",
+    submission: "SUBMITTED",
+    phase: "submitted_turn",
+    sdkStreamStarted: "NO",
+    requestKind: "ordinary-turn",
+    correlationThreadId: "thread-local",
+    correlationTurnId: "turn-local",
+    correlationProvenance: "pi-provider-generated request metadata",
+    upstreamThreadId: "UNKNOWN",
+    upstreamTurnId: "UNKNOWN",
+    upstreamIdentityProvenance: "UNKNOWN",
+    message: submittedMessage.errorMessage,
+    recovery: "RECONCILE_BEFORE_REPLAY",
+  });
+
+  const streamOnly = createFailureObservation(message("", {
+    stopReason: "error",
+    errorMessage: "Connection lost.",
+  }), {
+    code: "browser_response_interrupted",
+    streamStarted: true,
+    at: "2026-10-05T05:01:00.000Z",
+  });
+  assert.equal(streamOnly.classification, "unknown");
+  assert.equal(streamOnly.submission, "UNKNOWN");
+  assert.equal(streamOnly.phase, "response_stream");
+  assert.equal(streamOnly.sdkStreamStarted, "YES");
+  assert.equal(streamOnly.upstreamThreadId, "UNKNOWN");
+  assert.match(formatFailureObservation(streamOnly), /SDK stream started: YES \(not submission evidence\)/);
+  assert.match(formatFailureObservation(streamOnly), /Observed upstream identity: thread=UNKNOWN, turn=UNKNOWN/);
+  assert.match(formatFailureObservation(streamOnly), /reconcile ChatGPT browser state\/receipts before any replay/);
+
+  const stageTimeout = createFailureObservation(message("", {
+    stopReason: "error",
+    errorMessage: "multipart_stage_5_acknowledgement",
+  }), {
+    code: "multipart_stage_5_acknowledgement",
+  });
+  assert.equal(stageTimeout.classification, "unknown");
+  assert.equal(stageTimeout.submission, "UNKNOWN");
+
+  const ordinary = createFailureObservation(message("", {
+    stopReason: "error",
+    errorMessage: "401 ChatGPT sign-in required",
+  }), {
+    at: "2026-10-05T05:02:00.000Z",
+  });
+  assert.equal(ordinary.classification, "error");
+  assert.equal(ordinary.submission, "UNKNOWN");
+  assert.equal(ordinary.code, "UNKNOWN");
+  assert.equal(ordinary.phase, "UNKNOWN");
+  assert.equal(ordinary.recovery, "STANDARD_ERROR_HANDLING");
+});
 
 test("only an exact, valid canonical prompt appendix is removed", () => {
   const prompt = 'history "quotes"\nCODEX_LATEST_USER_PROMPT_JSON\nstill history';
@@ -112,7 +191,7 @@ test("ordinary responses retain text, signatures and incremental tool events", a
   assert.strictEqual(await wrapped.result(), toolResult);
 });
 
-test("post-submission failures stop Pi retry policy and preserve the original diagnostic", async () => {
+test("manual-recovery failures stop Pi retry policy and preserve the original diagnostic", async () => {
   for (const text of [
     "upstream_server_error: ChatGPT browser stage timed out: multipart_stage_5_acknowledgement",
     "chatgpt_submitted_turn_failed: ChatGPT stopped responding after the task started",
@@ -132,20 +211,28 @@ test("post-submission failures stop Pi retry policy and preserve the original di
       assert.equal(final.stopReason, "error");
       assert.equal(isRetryableAssistantError(final), false, final.errorMessage);
       assert.equal(failure.message, text);
+      assert.ok(["submitted", "unknown"].includes(failure.classification));
+      assert.equal(failure.submission, failure.classification === "submitted" ? "SUBMITTED" : "UNKNOWN");
+      assert.equal(failure.requestKind, "UNKNOWN");
+      assert.equal(failure.recovery, "RECONCILE_BEFORE_REPLAY");
       assert.match(final.errorMessage, /automatic replay is disabled/);
     }
   }
 });
 
-test("generic connection loss after response start cannot replay an accepted stream", async () => {
+test("generic connection loss after SDK stream start stays submission-unknown and cannot replay", async () => {
   for (const summary of [false, true]) {
     const source = createAssistantMessageEventStream();
     source.push({ type: "start", partial: message("") });
     source.push({ type: "error", reason: "error", error: message("", { stopReason: "error", errorMessage: "Connection lost" }) });
     source.end();
-    const final = await wrapBridgeStream(source, { model: MODEL, summary }).result();
+    let failure;
+    const final = await wrapBridgeStream(source, { model: MODEL, summary, onFailure: f => { failure = f; } }).result();
     assert.match(final.errorMessage, /browser_response_interrupted/);
     assert.equal(isRetryableAssistantError(final), false);
+    assert.equal(failure.sdkStreamStarted, "YES");
+    assert.equal(failure.submission, "UNKNOWN");
+    assert.equal(failure.classification, "unknown");
   }
 });
 
@@ -173,22 +260,107 @@ test("caller cancellation wins over a transport error and does not ask for manua
   assert.equal(isRetryableAssistantError(final), false);
 });
 
-test("a truncated iterator resolves as an inspection-required error rather than hanging", async () => {
+test("a truncated iterator ends as submission-unknown and never blind-retries", async () => {
   const source = { async *[Symbol.asyncIterator]() { yield { type: "start", partial: message("") }; } };
-  const result = await wrapBridgeStream(source, { model: MODEL }).result();
+  let failure;
+  const result = await wrapBridgeStream(source, { model: MODEL, onFailure: f => { failure = f; } }).result();
   assert.equal(result.stopReason, "error");
   assert.equal(isRetryableAssistantError(result), false);
   assert.match(result.errorMessage, /incomplete_browser_response/);
+  assert.equal(failure.sdkStreamStarted, "YES");
+  assert.equal(failure.submission, "UNKNOWN");
+  assert.equal(failure.classification, "unknown");
 });
 
 test("iterator exceptions and empty sanitized summaries produce terminal errors", async () => {
   const source = { async *[Symbol.asyncIterator]() { throw new Error("transport defect"); } };
   assert.equal((await wrapBridgeStream(source, { model: MODEL }).result()).errorMessage, "transport defect");
+  const partialSource = {
+    async *[Symbol.asyncIterator]() {
+      yield { type: "start", partial: message("") };
+      throw new Error("transport defect after start");
+    },
+  };
+  let partialFailure;
+  const partialResult = await wrapBridgeStream(partialSource, { model: MODEL, onFailure: f => { partialFailure = f; } }).result();
+  assert.match(partialResult.errorMessage, /browser_response_interrupted/);
+  assert.equal(partialFailure.submission, "UNKNOWN");
+  assert.equal(partialFailure.sdkStreamStarted, "YES");
   const prompt = "history";
   const invalid = sourceFor(message("\nCODEX_LATEST_USER_PROMPT_JSON\n" + JSON.stringify(prompt)));
   const final = await wrapBridgeStream(invalid, { model: MODEL, summary: true, expectedPrompt: () => prompt }).result();
   assert.equal(final.stopReason, "error");
   assert.match(final.errorMessage, /empty summary/);
+});
+
+test("terminal guard emits exactly one terminal and drops all post-terminal content/tool events", async () => {
+  const final = message("done");
+  const lateTool = { type: "toolcall_end", contentIndex: 1, toolCall: { type: "toolCall", id: "late", name: "bash", arguments: { command: "touch late" } }, partial: final };
+  const source = {
+    async *[Symbol.asyncIterator]() {
+      yield { type: "start", partial: { ...final, content: [] } };
+      yield { type: "done", reason: "stop", message: final };
+      yield { type: "text_delta", contentIndex: 0, delta: "LATE", partial: final };
+      yield lateTool;
+      yield { type: "error", reason: "error", error: message("", { stopReason: "error", errorMessage: "late error" }) };
+    },
+  };
+  const events = [];
+  const wrapped = wrapBridgeStream(source, { model: MODEL });
+  for await (const event of wrapped) events.push(event);
+  assert.deepEqual(events.map(event => event.type), ["start", "done"]);
+  assert.strictEqual(await wrapped.result(), final);
+});
+
+test("malformed events and malformed terminal events fail closed without replay", async () => {
+  for (const [badEvent, expectedCode] of [
+    [{ nope: true }, "browser_stream_malformed_event"],
+    [{ type: "done", reason: "stop" }, "browser_stream_malformed_terminal"],
+  ]) {
+    const source = {
+      async *[Symbol.asyncIterator]() {
+        yield { type: "start", partial: message("") };
+        yield badEvent;
+      },
+    };
+    let failure;
+    const result = await wrapBridgeStream(source, { model: MODEL, onFailure: f => { failure = f; } }).result();
+    assert.equal(result.stopReason, "error");
+    assert.match(result.errorMessage, new RegExp(expectedCode));
+    assert.equal(isRetryableAssistantError(result), false);
+    assert.equal(failure.code, expectedCode);
+    assert.equal(failure.submission, "UNKNOWN");
+    assert.equal(failure.recovery, "RECONCILE_BEFORE_REPLAY");
+  }
+});
+
+test("caller cancellation suppresses late deltas and tool calls even when the source ignores abort", async () => {
+  const controller = new AbortController();
+  let release;
+  const gate = new Promise(resolve => { release = resolve; });
+  const partial = message("");
+  const source = {
+    async *[Symbol.asyncIterator]() {
+      yield { type: "start", partial };
+      await gate;
+      yield { type: "text_delta", contentIndex: 0, delta: "LATE", partial };
+      yield { type: "toolcall_end", contentIndex: 1, toolCall: { type: "toolCall", id: "late", name: "bash", arguments: { command: "touch late" } }, partial };
+      yield { type: "done", reason: "stop", message: message("late") };
+    },
+  };
+  const wrapped = wrapBridgeStream(source, { model: MODEL, signal: controller.signal });
+  const events = [];
+  const collecting = (async () => { for await (const event of wrapped) events.push(event); })();
+  await new Promise(resolve => setImmediate(resolve));
+  controller.abort();
+  release();
+  await collecting;
+  const result = await wrapped.result();
+  assert.equal(result.stopReason, "aborted");
+  assert.equal(result.errorMessage, "Request was aborted");
+  assert.equal(events.some(event => event.type === "text_delta" || event.type.startsWith("toolcall_")), false);
+  assert.equal(events.filter(event => event.type === "error" || event.type === "done").length, 1);
+  assert.equal(isRetryableAssistantError(result), false);
 });
 
 test("an ambiguous failure before response headers cannot replay a submitted browser request", async () => {
@@ -208,6 +380,9 @@ test("an ambiguous failure before response headers cannot replay a submitted bro
       assert.equal(isRetryableAssistantError(result), false);
       assert.match(result.errorMessage, /browser_request_outcome_unknown/);
       assert.equal(failure.message, text);
+      assert.equal(failure.classification, "unknown");
+      assert.equal(failure.submission, "UNKNOWN");
+      assert.equal(failure.phase, "UNKNOWN");
     }
   }
 });

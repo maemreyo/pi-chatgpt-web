@@ -119,6 +119,8 @@ test("provider transport rewrites ordinary turns and keeps turn identity across 
   const first = await send(provider, responsesApi, options);
   const second = await send(provider, responsesApi, options);
 
+  assert.equal(responsesApi.calls[0].options.maxRetries, 0);
+  assert.equal(responsesApi.calls[1].options.maxRetries, 0);
   assert.equal(first.model, "chatgpt-web/gpt-5.6-sol");
   assert.equal(second.model, "chatgpt-web/gpt-5.6-sol");
   assert.equal(metadata(first).request_kind, "turn");

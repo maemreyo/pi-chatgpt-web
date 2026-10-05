@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.6 - 2026-10-05 (Git build; npm publication pending)
+
+- Layer provider recovery diagnostics into submitted/unknown/error receipts without treating SDK `start` or provider-generated correlation IDs as upstream submission/identity evidence. Keep observed upstream IDs UNKNOWN unless actually exposed; require reconcile-first handling for ambiguous or submitted outcomes; preserve `maxRetries: 0`; and state explicitly that `/healthz` readiness does not establish long-task upstream reliability or failed-turn completion.
+- Guard partial/malformed/terminal/cancel behavior: fail closed on malformed stream/terminal events, forward exactly one terminal, drop post-terminal content/tools, and suppress late deltas/tool calls after caller cancellation even when the source ignores abort.
+- Extend `/chatgpt-web-status` with separate package/provider/model-effort/auth/Pi-tool observations. Report verified bridge capability availability only when observed, auth failures only when actually seen, and otherwise print UNKNOWN instead of inferring state.
+
 ## 0.2.5 - 2026-10-05
 
 - Add a bridge-aware context-budget resolver for `codex-chatgpt-web` 6.1.4. Keep raw bridge context, Pi-advertised usable context, and the safe compaction threshold distinct instead of blindly advertising Bigger Context's raw window.

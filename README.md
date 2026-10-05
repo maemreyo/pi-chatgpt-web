@@ -86,7 +86,7 @@ For Pi to use local tools through a ChatGPT Web turn, configure the **Full harne
 From the tagged GitHub release:
 
 ```bash
-pi install git:github.com/maemreyo/pi-chatgpt-web@v0.2.5
+pi install git:github.com/maemreyo/pi-chatgpt-web@main
 ```
 
 Or track the repository default branch:
@@ -249,7 +249,11 @@ Update to `pi-chatgpt-web` v0.2.2 or newer. Earlier builds only rewrote ordinary
 
 From v0.2.3, the extension disables SDK HTTP replay and prevents Pi from automatically replaying known post-submission browser failures. The prompt may already have been accepted by ChatGPT, and tools may already have run. Pi reports that manual recovery is required instead of silently sending the task again.
 
-Run /chatgpt-web-status in the same Pi process to see the original failure and timestamp, then inspect the ChatGPT tab before deciding how to continue. Last-failure diagnostics are process-local and historical; bridge readiness alone does not prove that a failed turn completed. Only explicit connection-refused failures remain eligible for Pi's normal retry policy. Generic transport failures, 502/504 and 429 do not prove that submission never happened and require manual recovery. Cancellation remains cancellation. This adapter does not guarantee recovery from a stopped upstream ChatGPT response or change bridge deadlines.
+Run /chatgpt-web-status in the same Pi process to see a process-local recovery receipt: original error, submitted/unknown/error classification, explicit submission evidence when it exists, observed phase, SDK stream-start state, request kind, and the provider-generated correlation IDs used in outbound metadata. Those local correlation IDs are not claimed as observed ChatGPT conversation/turn receipts; upstream identity remains UNKNOWN unless the bridge actually exposes it. SDK `start` is also not submission evidence. For submitted or ambiguous outcomes, reconcile ChatGPT browser state/receipts before any replay; never automatically replay a possibly mutating request.
+
+The same status command reports separate package/provider/model-effort/auth/Pi-tool layers. Package metadata and provider/tool registration are local observations; model-effort availability is only AVAILABLE when the bounded bridge capability snapshot is verified; authentication remains UNKNOWN unless an auth failure was actually observed. Missing evidence stays UNKNOWN rather than being inferred.
+
+Bridge health is a separate layer. A healthy /healthz response means the local bridge is reachable and accepting turns; it does not prove long-running upstream browser reliability or that a failed turn completed. Partial or malformed streams fail closed, only one terminal event is forwarded, late post-terminal content/tools are dropped, and caller cancellation suppresses late deltas/tool calls even if the source ignores abort. Only explicit connection-refused failures remain eligible for Pi's normal retry policy. Generic transport failures, 502/504 and 429 do not prove that submission never happened and require manual recovery. This adapter does not guarantee recovery from a stopped upstream ChatGPT response or change bridge deadlines.
 
 ### Local tools unavailable
 
@@ -306,3 +310,9 @@ MIT
 The [deep audit](docs/DEEP_E2E_2026-10-03.md) includes Instant, Medium and High multi-tool/resume tests, all Pi summary paths, isolated concurrent actors, tool abort recovery, queued follow-up, image input, Firefox companion automation, installed review integration, HTTP/SSE fault injection, and nested tool authority checks. Reproducible scripts and sanitized machine evidence are retained in this repository. Use a new output directory for each run; live cases consume ChatGPT requests.
 
 New independent review acceptance runs select **Sol High**. The recorded Medium/Instant runs are historical regression evidence. Use Sol High for new live model work unless a different effort is explicitly requested.
+
+### Community readiness validation (2026-10-05)
+
+The Git build is package version 0.2.6; v0.2.5 remains the existing release tag. No npm publication is claimed. Provider/stream tests cover 54 cases. Actual Pi 1.0 RPC, Sol High, with retry enabled sent exactly one request and no retry event for locally injected multipart acknowledgement timeout, submitted failure, and truncated SSE. These are failure-injection integration checks, not browser DEV acceptance or proof of long-task reliability. A live bridge attempt returned `browser_response_interrupted`; its outcome remains subject to receipt reconciliation, with no automatic replay. The v0.2.5 context-budget implementation is unchanged.
+
+A subsequent fresh isolated live Pi 1.0 RPC acceptance used Sol High and this 0.2.6 extension against the existing bridge: two actual `shell_command` executions passed, including an expected nonexistent-workdir failure, a quoted directory, exact output bytes, and no wrong-directory write. This is native-tool integration acceptance; it does not establish that upstream long-task interruptions are eliminated. Earlier failed attempts were not automatically replayed.
